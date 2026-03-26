@@ -83,8 +83,27 @@ Quick reference: IDs are **numeric user IDs** (get yours from [@userinfobot](htt
 | `react` | Add an emoji reaction to a message by ID. **Only Telegram's fixed whitelist** is accepted (👍 👎 ❤ 🔥 👀 etc). |
 | `edit_message` | Edit a message the bot previously sent. Useful for "working…" → result progress updates. Only works on the bot's own messages. |
 
+`reply`와 `edit_message`는 `format` 파라미터를 지원합니다:
+
+| Format | Description |
+| --- | --- |
+| `markdown` (기본값) | GitHub-flavored markdown을 Telegram HTML로 자동 변환합니다. 코드 블록, 인라인 코드, **볼드**, *이탤릭*, ~~취소선~~, [링크](url), 인용(>), 헤더(#)를 지원합니다. |
+| `text` | 서식 없이 일반 텍스트로 전송합니다. |
+| `markdownv2` | Telegram MarkdownV2 원본 형식을 사용합니다. 호출자가 직접 특수문자를 이스케이프해야 합니다. |
+
 Inbound messages trigger a typing indicator automatically — Telegram shows
 "botname is typing…" while the assistant works on a response.
+
+## Permission request display / 권한 요청 표시
+
+도구 사용 권한 요청이 Telegram으로 전송될 때, MCP 도구 이름이 가독성 높은 형태로 변환되어 표시됩니다.
+
+```
+mcp__plugin_code-review-graph_code-review-graph__list_graph_stats_tool
+→ plugin:code-review-graph:code-review-graph - list_graph_stats_tool
+```
+
+권한 요청 메시지에는 도구 이름, 인자, 설명이 포함되며, 인라인 버튼(📋 상세 / ✅ 허용 / ❌ 거부)으로 응답할 수 있습니다.
 
 ## Photos
 

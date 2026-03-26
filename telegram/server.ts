@@ -350,6 +350,56 @@ function chunk(text: string, limit: number, mode: 'length' | 'newline'): string[
 // everything else goes as documents (raw file, no compression).
 const PHOTO_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp'])
 
+// Convert GitHub-flavored markdown to Telegram HTML so Claude Code output
+// renders with the same formatting the terminal shows.
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function markdownToTelegramHtml(md: string): string {
+  const holders: string[] = []
+  function hold(html: string): string {
+    holders.push(html)
+    return `\x00${holders.length - 1}\x00`
+  }
+
+  let t = md
+
+  // Fenced code blocks → <pre><code>
+  t = t.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const cls = lang ? ` class="language-${escapeHtml(lang)}"` : ''
+    return hold(`<pre><code${cls}>${escapeHtml(code.trimEnd())}</code></pre>`)
+  })
+
+  // Inline code → <code>
+  t = t.replace(/`([^`\n]+)`/g, (_, c) => hold(`<code>${escapeHtml(c)}</code>`))
+
+  // Escape HTML in remaining text
+  t = escapeHtml(t)
+
+  // Bold: **text**
+  t = t.replace(/\*\*(.+?)\*\*/gs, '<b>$1</b>')
+  // Italic: *text* (not adjacent to another *)
+  t = t.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/gs, '<i>$1</i>')
+  // Strikethrough: ~~text~~
+  t = t.replace(/~~(.+?)~~/gs, '<s>$1</s>')
+  // Links: [text](url)
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+  // Blockquotes: consecutive > lines
+  t = t.replace(/(^&gt;\s?.+$(?:\n&gt;\s?.+$)*)/gm, (match) => {
+    const content = match.replace(/^&gt;\s?/gm, '')
+    return `<blockquote>${content}</blockquote>`
+  })
+  // Headers: # text → bold
+  t = t.replace(/^#{1,6}\s+(.+)$/gm, '<b>$1</b>')
+
+  // Restore placeholders
+  for (let i = 0; i < holders.length; i++) {
+    t = t.replace(`\x00${i}\x00`, holders[i])
+  }
+  return t
+}
+
 const mcp = new Server(
   { name: 'telegram', version: '1.0.0' },
   {
@@ -379,6 +429,51 @@ const mcp = new Server(
   },
 )
 
+// Format MCP tool names to match Claude Code's terminal display.
+// e.g. mcp__plugin_code-review-graph_code-review-graph__list_graph_stats_tool
+//    → plugin:code-review-graph:code-review-graph - list_graph_stats_tool
+function formatPermToolName(raw: string): { display: string; isMcp: boolean } {
+  const parts = raw.split('__')
+  if (parts.length >= 3 && parts[0] === 'mcp') {
+    const serverPart = parts.slice(1, -1).join('__')
+    const toolName = parts[parts.length - 1]
+    let display: string
+    if (serverPart.startsWith('plugin_')) {
+      const rest = serverPart.slice(7)
+      const idx = rest.indexOf('_')
+      display = idx > 0
+        ? `plugin:${rest.slice(0, idx)}:${rest.slice(idx + 1)} - ${toolName}`
+        : `plugin:${rest} - ${toolName}`
+    } else {
+      display = `${serverPart} - ${toolName}`
+    }
+    return { display, isMcp: true }
+  }
+  return { display: raw, isMcp: false }
+}
+
+function formatToolArgs(inputPreview: string): string {
+  try {
+    const obj = JSON.parse(inputPreview) as Record<string, unknown>
+    return Object.entries(obj)
+      .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+      .join(', ')
+  } catch {
+    return inputPreview
+  }
+}
+
+function formatPermissionHtml(toolName: string, description: string, inputPreview: string): string {
+  const { display, isMcp } = formatPermToolName(toolName)
+  const argsInline = formatToolArgs(inputPreview)
+  const tag = isMcp ? '  (MCP)' : ''
+  return (
+    `<b>도구 사용</b>\n\n` +
+    `  <code>${escapeHtml(display)}</code>(${escapeHtml(argsInline)})${tag}\n` +
+    `  <i>${escapeHtml(description)}</i>`
+  )
+}
+
 // Stores full permission details for "See more" expansion keyed by request_id.
 const pendingPermissions = new Map<string, { tool_name: string; description: string; input_preview: string }>()
 
@@ -400,13 +495,13 @@ mcp.setNotificationHandler(
     const { request_id, tool_name, description, input_preview } = params
     pendingPermissions.set(request_id, { tool_name, description, input_preview })
     const access = loadAccess()
-    const text = `🔐 Permission: ${tool_name}`
+    const text = formatPermissionHtml(tool_name, description, input_preview)
     const keyboard = new InlineKeyboard()
-      .text('See more', `perm:more:${request_id}`)
-      .text('✅ Allow', `perm:allow:${request_id}`)
-      .text('❌ Deny', `perm:deny:${request_id}`)
+      .text('📋 상세', `perm:more:${request_id}`)
+      .text('✅ 허용', `perm:allow:${request_id}`)
+      .text('❌ 거부', `perm:deny:${request_id}`)
     for (const chat_id of access.allowFrom) {
-      void bot.api.sendMessage(chat_id, text, { reply_markup: keyboard }).catch(e => {
+      void bot.api.sendMessage(chat_id, text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(e => {
         process.stderr.write(`permission_request send to ${chat_id} failed: ${e}\n`)
       })
     }
@@ -435,8 +530,8 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           format: {
             type: 'string',
-            enum: ['text', 'markdownv2'],
-            description: "Rendering mode. 'markdownv2' enables Telegram formatting (bold, italic, code, links). Caller must escape special chars per MarkdownV2 rules. Default: 'text' (plain, no escaping needed).",
+            enum: ['markdown', 'text', 'markdownv2'],
+            description: "Rendering mode. 'markdown' (default) auto-converts GitHub-flavored markdown to Telegram HTML. 'text' sends as plain text. 'markdownv2' enables raw Telegram MarkdownV2 (caller must escape).",
           },
         },
         required: ['chat_id', 'text'],
@@ -477,8 +572,8 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
           text: { type: 'string' },
           format: {
             type: 'string',
-            enum: ['text', 'markdownv2'],
-            description: "Rendering mode. 'markdownv2' enables Telegram formatting (bold, italic, code, links). Caller must escape special chars per MarkdownV2 rules. Default: 'text' (plain, no escaping needed).",
+            enum: ['markdown', 'text', 'markdownv2'],
+            description: "Rendering mode. 'markdown' (default) auto-converts GitHub-flavored markdown to Telegram HTML. 'text' sends as plain text. 'markdownv2' enables raw Telegram MarkdownV2 (caller must escape).",
           },
         },
         required: ['chat_id', 'message_id', 'text'],
@@ -496,8 +591,15 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
         const text = args.text as string
         const reply_to = args.reply_to != null ? Number(args.reply_to) : undefined
         const files = (args.files as string[] | undefined) ?? []
-        const format = (args.format as string | undefined) ?? 'text'
-        const parseMode = format === 'markdownv2' ? 'MarkdownV2' as const : undefined
+        const format = (args.format as string | undefined) ?? 'markdown'
+        let replyText = text
+        let parseMode: 'MarkdownV2' | 'HTML' | undefined
+        if (format === 'markdown') {
+          replyText = markdownToTelegramHtml(text)
+          parseMode = 'HTML'
+        } else if (format === 'markdownv2') {
+          parseMode = 'MarkdownV2'
+        }
 
         assertAllowedChat(chat_id)
 
@@ -513,7 +615,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
         const limit = Math.max(1, Math.min(access.textChunkLimit ?? MAX_CHUNK_LIMIT, MAX_CHUNK_LIMIT))
         const mode = access.chunkMode ?? 'length'
         const replyMode = access.replyToMode ?? 'first'
-        const chunks = chunk(text, limit, mode)
+        const chunks = chunk(replyText, limit, mode)
         const sentIds: number[] = []
 
         try {
@@ -585,12 +687,19 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
       }
       case 'edit_message': {
         assertAllowedChat(args.chat_id as string)
-        const editFormat = (args.format as string | undefined) ?? 'text'
-        const editParseMode = editFormat === 'markdownv2' ? 'MarkdownV2' as const : undefined
+        const editFormat = (args.format as string | undefined) ?? 'markdown'
+        let editText = args.text as string
+        let editParseMode: 'MarkdownV2' | 'HTML' | undefined
+        if (editFormat === 'markdown') {
+          editText = markdownToTelegramHtml(editText)
+          editParseMode = 'HTML'
+        } else if (editFormat === 'markdownv2') {
+          editParseMode = 'MarkdownV2'
+        }
         const edited = await bot.api.editMessageText(
           args.chat_id as string,
           Number(args.message_id),
-          args.text as string,
+          editText,
           ...(editParseMode ? [{ parse_mode: editParseMode }] : []),
         )
         const id = typeof edited === 'object' ? edited.message_id : args.message_id
@@ -708,7 +817,7 @@ bot.on('callback_query:data', async ctx => {
   if (behavior === 'more') {
     const details = pendingPermissions.get(request_id)
     if (!details) {
-      await ctx.answerCallbackQuery({ text: 'Details no longer available.' }).catch(() => {})
+      await ctx.answerCallbackQuery({ text: '상세 정보가 만료되었습니다.' }).catch(() => {})
       return
     }
     const { tool_name, description, input_preview } = details
@@ -719,30 +828,34 @@ bot.on('callback_query:data', async ctx => {
       prettyInput = input_preview
     }
     const expanded =
-      `🔐 Permission: ${tool_name}\n\n` +
-      `tool_name: ${tool_name}\n` +
-      `description: ${description}\n` +
-      `input_preview:\n${prettyInput}`
+      formatPermissionHtml(tool_name, description, input_preview) +
+      `\n\n<b>입력:</b>\n<pre>${escapeHtml(prettyInput)}</pre>`
     const keyboard = new InlineKeyboard()
-      .text('✅ Allow', `perm:allow:${request_id}`)
-      .text('❌ Deny', `perm:deny:${request_id}`)
-    await ctx.editMessageText(expanded, { reply_markup: keyboard }).catch(() => {})
+      .text('✅ 허용', `perm:allow:${request_id}`)
+      .text('❌ 거부', `perm:deny:${request_id}`)
+    await ctx.editMessageText(expanded, { parse_mode: 'HTML', reply_markup: keyboard }).catch(() => {})
     await ctx.answerCallbackQuery().catch(() => {})
     return
   }
 
+  const details = pendingPermissions.get(request_id)
   void mcp.notification({
     method: 'notifications/claude/channel/permission',
     params: { request_id, behavior },
   })
   pendingPermissions.delete(request_id)
-  const label = behavior === 'allow' ? '✅ Allowed' : '❌ Denied'
+  const label = behavior === 'allow' ? '✅ 허용됨' : '❌ 거부됨'
   await ctx.answerCallbackQuery({ text: label }).catch(() => {})
   // Replace buttons with the outcome so the same request can't be answered
   // twice and the chat history shows what was chosen.
-  const msg = ctx.callbackQuery.message
-  if (msg && 'text' in msg && msg.text) {
-    await ctx.editMessageText(`${msg.text}\n\n${label}`).catch(() => {})
+  if (details) {
+    const html = formatPermissionHtml(details.tool_name, details.description, details.input_preview)
+    await ctx.editMessageText(`${html}\n\n${label}`, { parse_mode: 'HTML' }).catch(() => {})
+  } else {
+    const msg = ctx.callbackQuery.message
+    if (msg && 'text' in msg && msg.text) {
+      await ctx.editMessageText(`${msg.text}\n\n${label}`).catch(() => {})
+    }
   }
 })
 
