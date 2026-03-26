@@ -65,7 +65,8 @@ process.on('uncaughtException', err => {
 // src/services/mcp/channelPermissions.ts — inlined (no CC repo dep).
 // 5 lowercase letters a-z minus 'l'. Case-insensitive for phone autocorrect.
 // Strict: no bare yes/no (conversational), no prefix/suffix chatter.
-const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i
+// 'a'/'always' maps to allow_always (session-wide allow).
+const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no|a|always)\s+([a-km-z]{5})\s*$/i
 
 const bot = new Bot(TOKEN)
 let botUsername = ''
@@ -498,7 +499,9 @@ mcp.setNotificationHandler(
     const text = formatPermissionHtml(tool_name, description, input_preview)
     const keyboard = new InlineKeyboard()
       .text('📋 상세', `perm:more:${request_id}`)
+      .row()
       .text('✅ 허용', `perm:allow:${request_id}`)
+      .text('✅ 세션 허용', `perm:always:${request_id}`)
       .text('❌ 거부', `perm:deny:${request_id}`)
     for (const chat_id of access.allowFrom) {
       void bot.api.sendMessage(chat_id, text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(e => {
@@ -801,7 +804,7 @@ bot.command('status', async ctx => {
 // Security mirrors the text-reply path: allowFrom must contain the sender.
 bot.on('callback_query:data', async ctx => {
   const data = ctx.callbackQuery.data
-  const m = /^perm:(allow|deny|more):([a-km-z]{5})$/.exec(data)
+  const m = /^perm:(allow|deny|more|always):([a-km-z]{5})$/.exec(data)
   if (!m) {
     await ctx.answerCallbackQuery().catch(() => {})
     return
@@ -832,6 +835,7 @@ bot.on('callback_query:data', async ctx => {
       `\n\n<b>입력:</b>\n<pre>${escapeHtml(prettyInput)}</pre>`
     const keyboard = new InlineKeyboard()
       .text('✅ 허용', `perm:allow:${request_id}`)
+      .text('✅ 세션 허용', `perm:always:${request_id}`)
       .text('❌ 거부', `perm:deny:${request_id}`)
     await ctx.editMessageText(expanded, { parse_mode: 'HTML', reply_markup: keyboard }).catch(() => {})
     await ctx.answerCallbackQuery().catch(() => {})
@@ -839,12 +843,13 @@ bot.on('callback_query:data', async ctx => {
   }
 
   const details = pendingPermissions.get(request_id)
+  const notifBehavior = behavior === 'always' ? 'allow_always' : behavior
   void mcp.notification({
     method: 'notifications/claude/channel/permission',
-    params: { request_id, behavior },
+    params: { request_id, behavior: notifBehavior },
   })
   pendingPermissions.delete(request_id)
-  const label = behavior === 'allow' ? '✅ 허용됨' : '❌ 거부됨'
+  const label = behavior === 'allow' ? '✅ 허용됨' : behavior === 'always' ? '✅ 세션 허용됨' : '❌ 거부됨'
   await ctx.answerCallbackQuery({ text: label }).catch(() => {})
   // Replace buttons with the outcome so the same request can't be answered
   // twice and the chat history shows what was chosen.
@@ -1001,15 +1006,17 @@ async function handleInbound(
   // (non-allowlisted senders were dropped above), so we trust the reply.
   const permMatch = PERMISSION_REPLY_RE.exec(text)
   if (permMatch) {
+    const reply = permMatch[1]!.toLowerCase()
+    const permBehavior = reply.startsWith('y') ? 'allow' : reply.startsWith('a') ? 'allow_always' : 'deny'
     void mcp.notification({
       method: 'notifications/claude/channel/permission',
       params: {
         request_id: permMatch[2]!.toLowerCase(),
-        behavior: permMatch[1]!.toLowerCase().startsWith('y') ? 'allow' : 'deny',
+        behavior: permBehavior,
       },
     })
     if (msgId != null) {
-      const emoji = permMatch[1]!.toLowerCase().startsWith('y') ? '✅' : '❌'
+      const emoji = reply.startsWith('n') ? '❌' : '✅'
       void bot.api.setMessageReaction(chat_id, msgId, [
         { type: 'emoji', emoji: emoji as ReactionTypeEmoji['emoji'] },
       ]).catch(() => {})
