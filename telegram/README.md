@@ -1,5 +1,11 @@
 # Telegram
 
+> **Fork Notice / 포크 안내**
+>
+> This plugin is a fork of [anthropics/claude-plugins-official/telegram](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/telegram) with Korean localization and display improvements.
+>
+> 이 플러그인은 [anthropics/claude-plugins-official/telegram](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/telegram)의 포크입니다. 한글화 및 표시 개선이 적용되어 있습니다.
+
 Connect a Telegram bot to your Claude Code with an MCP server.
 
 The MCP server logs into Telegram as a bot and provides tools to Claude to reply, react, or edit messages. When you message the bot, the server forwards the message to your Claude Code session.
@@ -26,7 +32,7 @@ These are Claude Code commands — run `claude` to start a session first.
 
 Install the plugin:
 ```
-/plugin install telegram@claude-plugins-official
+/plugin install telegram@manuel71-plugins
 ```
 
 **3. Give the server the token.**
@@ -44,7 +50,7 @@ Writes `TELEGRAM_BOT_TOKEN=...` to `~/.claude/channels/telegram/.env`. You can a
 The server won't connect without this — exit your session and start a new one:
 
 ```sh
-claude --channels plugin:telegram@claude-plugins-official
+claude --channels plugin:telegram@manuel71-plugins
 ```
 
 **5. Pair.**

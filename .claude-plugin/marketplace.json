@@ -1,0 +1,21 @@
+{
+  "name": "manuel71-plugins",
+  "owner": {
+    "name": "manuel71"
+  },
+  "metadata": {
+    "description": "Claude Code plugin marketplace by manuel71",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "telegram",
+      "source": "./telegram",
+      "description": "Telegram channel for Claude Code — messaging bridge with built-in access control.",
+      "version": "0.0.4",
+      "license": "Apache-2.0",
+      "keywords": ["telegram", "messaging", "channel", "mcp"],
+      "category": "communication"
+    }
+  ]
+}

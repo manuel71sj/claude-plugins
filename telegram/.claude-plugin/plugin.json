@@ -1,11 +1,19 @@
 {
   "name": "telegram",
-  "description": "Telegram channel for Claude Code \u2014 messaging bridge with built-in access control. Manage pairing, allowlists, and policy via /telegram:access.",
+  "description": "Telegram channel for Claude Code \u2014 messaging bridge with built-in access control. Forked from claude-plugins-official with Korean localization and display improvements.",
   "version": "0.0.4",
+  "author": {
+    "name": "manuel71"
+  },
+  "homepage": "https://github.com/manuel71/claude-plugins",
+  "repository": "https://github.com/manuel71/claude-plugins",
+  "license": "Apache-2.0",
   "keywords": [
     "telegram",
     "messaging",
     "channel",
-    "mcp"
-  ]
+    "mcp",
+    "korean"
+  ],
+  "upstream": "https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/telegram"
 }

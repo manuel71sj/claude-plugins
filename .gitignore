@@ -1,0 +1,6 @@
+.claude/
+.omc/
+node_modules/
+web/.next/
+web/out/
+.DS_Store
