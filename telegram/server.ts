@@ -2,6 +2,15 @@
 /**
  * Telegram channel for Claude Code.
  *
+ * Originally from https://github.com/anthropics/claude-plugins-official
+ * Copyright 2026 Anthropic, PBC. Licensed under Apache-2.0.
+ *
+ * Modified by manuel71sj (https://github.com/manuel71sj/claude-plugins):
+ * - Korean localization for permission UI
+ * - Session-wide allow (allow_always) button
+ * - GitHub-flavored markdown to Telegram HTML rendering
+ * - Enhanced permission request display with tool details
+ *
  * Self-contained MCP server with full access control: pairing, allowlists,
  * group support with mention-triggering. State lives in
  * ~/.claude/channels/telegram/access.json — managed by the /telegram:access skill.
