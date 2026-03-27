@@ -1,7 +1,7 @@
 {
   "name": "telegram",
   "description": "Telegram channel for Claude Code by manuel71sj\u2014 messaging bridge with built-in access control. Forked from claude-plugins-official with Korean localization and display improvements.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": {"name": "manuel71"},
   "homepage": "https://github.com/manuel71/claude-plugins",
   "repository": "https://github.com/manuel71/claude-plugins",
