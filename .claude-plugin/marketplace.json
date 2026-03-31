@@ -11,6 +11,15 @@
       "license"    : "Apache-2.0",
       "keywords"   : ["telegram", "messaging", "channel", "mcp"],
       "category"   : "communication"
+    },
+    {
+      "name"       : "glab-cli",
+      "source"     : "./glab-cli",
+      "description": "GitLab CLI (glab) reference guide for Self-Managed environments — setup, MR, CI/CD, issues.",
+      "version"    : "0.0.1",
+      "license"    : "Apache-2.0",
+      "keywords"   : ["gitlab", "glab", "cli", "self-managed", "devops"],
+      "category"   : "developer-tools"
     }
   ]
 }
