@@ -1,0 +1,11 @@
+{
+  "name": "commit",
+  "description": "Conventional Commits skill with Korean messages, ANSI-safe -F pipeline, and --amend support.",
+  "version": "0.0.1",
+  "author": {"name": "manuel71"},
+  "homepage": "https://github.com/manuel71/claude-plugins",
+  "repository": "https://github.com/manuel71/claude-plugins",
+  "license": "Apache-2.0",
+  "keywords": ["commit", "conventional-commits", "korean", "git"],
+  "category": "developer-tools"
+}

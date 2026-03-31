@@ -20,6 +20,15 @@
       "license"    : "Apache-2.0",
       "keywords"   : ["gitlab", "glab", "cli", "self-managed", "devops"],
       "category"   : "developer-tools"
+    },
+    {
+      "name"       : "commit",
+      "source"     : "./commit",
+      "description": "Conventional Commits with Korean messages, ANSI-safe pipeline, and --amend support.",
+      "version"    : "0.0.1",
+      "license"    : "Apache-2.0",
+      "keywords"   : ["commit", "conventional-commits", "korean", "git"],
+      "category"   : "developer-tools"
     }
   ]
 }
