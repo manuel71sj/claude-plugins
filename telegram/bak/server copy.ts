@@ -2,15 +2,6 @@
 /**
  * Telegram channel for Claude Code.
  *
- * Originally from https://github.com/anthropics/claude-plugins-official
- * Copyright 2026 Anthropic, PBC. Licensed under Apache-2.0.
- *
- * Modified by manuel71sj (https://github.com/manuel71sj/claude-plugins):
- * - Korean localization for permission UI
- * - Session-wide allow (allow_always) button
- * - GitHub-flavored markdown to Telegram HTML rendering
- * - Enhanced permission request display with tool details
- *
  * Self-contained MCP server with full access control: pairing, allowlists,
  * group support with mention-triggering. State lives in
  * ~/.claude/channels/telegram/access.json — managed by the /telegram:access skill.
@@ -34,10 +25,6 @@ import { join, extname, sep } from 'path'
 
 const STATE_DIR = process.env.TELEGRAM_STATE_DIR ?? join(homedir(), '.claude', 'channels', 'telegram')
 const ACCESS_FILE = join(STATE_DIR, 'access.json')
-
-let _accessCache: { data: Access; mtimeMs: number } | null = null
-let _compiledMentionPatterns: RegExp[] | null = null
-let _mentionPatternsSource: string[] | undefined = undefined
 const APPROVED_DIR = join(STATE_DIR, 'approved')
 const ENV_FILE = join(STATE_DIR, '.env')
 
@@ -144,13 +131,9 @@ function assertSendable(f: string): void {
 
 function readAccessFile(): Access {
   try {
-    const mtimeMs = statSync(ACCESS_FILE).mtimeMs
-    if (_accessCache !== null && _accessCache.mtimeMs === mtimeMs) {
-      return _accessCache.data
-    }
     const raw = readFileSync(ACCESS_FILE, 'utf8')
     const parsed = JSON.parse(raw) as Partial<Access>
-    const data: Access = {
+    return {
       dmPolicy: parsed.dmPolicy ?? 'pairing',
       allowFrom: parsed.allowFrom ?? [],
       groups: parsed.groups ?? {},
@@ -161,8 +144,6 @@ function readAccessFile(): Access {
       textChunkLimit: parsed.textChunkLimit,
       chunkMode: parsed.chunkMode,
     }
-    _accessCache = { data, mtimeMs }
-    return data
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return defaultAccess()
     try {
@@ -209,8 +190,6 @@ function saveAccess(a: Access): void {
   const tmp = ACCESS_FILE + '.tmp'
   writeFileSync(tmp, JSON.stringify(a, null, 2) + '\n', { mode: 0o600 })
   renameSync(tmp, ACCESS_FILE)
-  _accessCache = null
-  _compiledMentionPatterns = null
 }
 
 function pruneExpired(a: Access): boolean {
@@ -290,22 +269,6 @@ function gate(ctx: Context): GateResult {
   return { action: 'drop' }
 }
 
-function getCompiledMentionPatterns(patterns: string[] | undefined): RegExp[] {
-  if (patterns === _mentionPatternsSource && _compiledMentionPatterns !== null) {
-    return _compiledMentionPatterns
-  }
-  _mentionPatternsSource = patterns
-  _compiledMentionPatterns = []
-  for (const pat of patterns ?? []) {
-    try {
-      _compiledMentionPatterns.push(new RegExp(pat, 'i'))
-    } catch {
-      // Invalid user-supplied regex — skip it.
-    }
-  }
-  return _compiledMentionPatterns
-}
-
 function isMentioned(ctx: Context, extraPatterns?: string[]): boolean {
   const entities = ctx.message?.entities ?? ctx.message?.caption_entities ?? []
   const text = ctx.message?.text ?? ctx.message?.caption ?? ''
@@ -322,8 +285,12 @@ function isMentioned(ctx: Context, extraPatterns?: string[]): boolean {
   // Reply to one of our messages counts as an implicit mention.
   if (ctx.message?.reply_to_message?.from?.username === botUsername) return true
 
-  for (const re of getCompiledMentionPatterns(extraPatterns)) {
-    if (re.test(text)) return true
+  for (const pat of extraPatterns ?? []) {
+    try {
+      if (new RegExp(pat, 'i').test(text)) return true
+    } catch {
+      // Invalid user-supplied regex — skip it.
+    }
   }
   return false
 }
@@ -428,7 +395,9 @@ function markdownToTelegramHtml(md: string): string {
   t = t.replace(/^#{1,6}\s+(.+)$/gm, '<b>$1</b>')
 
   // Restore placeholders
-  t = t.replace(/\x00(\d+)\x00/g, (_, idx) => holders[Number(idx)])
+  for (let i = 0; i < holders.length; i++) {
+    t = t.replace(`\x00${i}\x00`, holders[i])
+  }
   return t
 }
 
@@ -925,83 +894,73 @@ bot.on('message:photo', async ctx => {
   })
 })
 
-// Data-driven media handlers — each entry maps a grammy filter to
-// how we extract text, file metadata, and attachment info.
-const mediaHandlers: Array<{
-  filter: string
-  extract: (ctx: Context) => { text: string; meta: AttachmentMeta }
-}> = [
-  {
-    filter: 'message:document',
-    extract: ctx => {
-      const doc = (ctx.message as any).document
-      const name = safeName(doc.file_name)
-      return {
-        text: ctx.message!.caption ?? `(document: ${name ?? 'file'})`,
-        meta: { kind: 'document', file_id: doc.file_id, size: doc.file_size, mime: doc.mime_type, name },
-      }
-    },
-  },
-  {
-    filter: 'message:voice',
-    extract: ctx => {
-      const voice = (ctx.message as any).voice
-      return {
-        text: ctx.message!.caption ?? '(voice message)',
-        meta: { kind: 'voice', file_id: voice.file_id, size: voice.file_size, mime: voice.mime_type },
-      }
-    },
-  },
-  {
-    filter: 'message:audio',
-    extract: ctx => {
-      const audio = (ctx.message as any).audio
-      const name = safeName(audio.file_name)
-      return {
-        text: ctx.message!.caption ?? `(audio: ${safeName(audio.title) ?? name ?? 'audio'})`,
-        meta: { kind: 'audio', file_id: audio.file_id, size: audio.file_size, mime: audio.mime_type, name },
-      }
-    },
-  },
-  {
-    filter: 'message:video',
-    extract: ctx => {
-      const video = (ctx.message as any).video
-      return {
-        text: ctx.message!.caption ?? '(video)',
-        meta: { kind: 'video', file_id: video.file_id, size: video.file_size, mime: video.mime_type, name: safeName(video.file_name) },
-      }
-    },
-  },
-  {
-    filter: 'message:video_note',
-    extract: ctx => {
-      const vn = (ctx.message as any).video_note
-      return {
-        text: '(video note)',
-        meta: { kind: 'video_note', file_id: vn.file_id, size: vn.file_size },
-      }
-    },
-  },
-  {
-    filter: 'message:sticker',
-    extract: ctx => {
-      const sticker = (ctx.message as any).sticker
-      const emoji = sticker.emoji ? ` ${sticker.emoji}` : ''
-      return {
-        text: `(sticker${emoji})`,
-        meta: { kind: 'sticker', file_id: sticker.file_id, size: sticker.file_size },
-      }
-    },
-  },
-]
-
-for (const { filter, extract } of mediaHandlers) {
-  bot.on(filter as any, async (ctx: Context) => {
-    const { text, meta } = extract(ctx)
-    await handleInbound(ctx, text, undefined, meta)
+bot.on('message:document', async ctx => {
+  const doc = ctx.message.document
+  const name = safeName(doc.file_name)
+  const text = ctx.message.caption ?? `(document: ${name ?? 'file'})`
+  await handleInbound(ctx, text, undefined, {
+    kind: 'document',
+    file_id: doc.file_id,
+    size: doc.file_size,
+    mime: doc.mime_type,
+    name,
   })
-}
+})
+
+bot.on('message:voice', async ctx => {
+  const voice = ctx.message.voice
+  const text = ctx.message.caption ?? '(voice message)'
+  await handleInbound(ctx, text, undefined, {
+    kind: 'voice',
+    file_id: voice.file_id,
+    size: voice.file_size,
+    mime: voice.mime_type,
+  })
+})
+
+bot.on('message:audio', async ctx => {
+  const audio = ctx.message.audio
+  const name = safeName(audio.file_name)
+  const text = ctx.message.caption ?? `(audio: ${safeName(audio.title) ?? name ?? 'audio'})`
+  await handleInbound(ctx, text, undefined, {
+    kind: 'audio',
+    file_id: audio.file_id,
+    size: audio.file_size,
+    mime: audio.mime_type,
+    name,
+  })
+})
+
+bot.on('message:video', async ctx => {
+  const video = ctx.message.video
+  const text = ctx.message.caption ?? '(video)'
+  await handleInbound(ctx, text, undefined, {
+    kind: 'video',
+    file_id: video.file_id,
+    size: video.file_size,
+    mime: video.mime_type,
+    name: safeName(video.file_name),
+  })
+})
+
+bot.on('message:video_note', async ctx => {
+  const vn = ctx.message.video_note
+  await handleInbound(ctx, '(video note)', undefined, {
+    kind: 'video_note',
+    file_id: vn.file_id,
+    size: vn.file_size,
+  })
+})
+
+bot.on('message:sticker', async ctx => {
+  const sticker = ctx.message.sticker
+  const emoji = sticker.emoji ? ` ${sticker.emoji}` : ''
+  await handleInbound(ctx, `(sticker${emoji})`, undefined, {
+    kind: 'sticker',
+    file_id: sticker.file_id,
+    size: sticker.file_size,
+  })
+})
 
 type AttachmentMeta = {
   kind: string
