@@ -80,6 +80,41 @@ claude --channels plugin:telegram@manuel71sj-plugins
 
 자세한 내용은 [telegram/README.md](./telegram/README.md)를 참조하세요.
 
+### glab-cli
+
+GitLab Self-Managed 환경을 위한 glab CLI 레퍼런스 가이드 플러그인입니다. 설정, 인증, MR, CI/CD, 이슈 관리 등을 포함합니다.
+
+```
+/plugin install glab-cli@manuel71sj-plugins
+```
+
+**제공 스킬:**
+
+| 스킬 | 설명 |
+|------|------|
+| `/glab-cli:glab-cli` | glab 설치, 인증, 설정, 릴리스, 저장소 운영, 변수, API, 별칭, 문제 해결 |
+| `/glab-cli:mr` | Merge Request 워크플로우 — 생성, 리뷰, 승인, 병합 |
+| `/glab-cli:ci` | CI/CD 파이프라인 관리 — 조회, 추적, 스케줄, 아티팩트 |
+| `/glab-cli:issue` | 이슈 및 인시던트 관리 — 생성, 추적, 종료 |
+
+자세한 내용은 [glab-cli/README.md](./glab-cli/README.md)를 참조하세요.
+
+### commit
+
+Conventional Commits 가이드라인에 맞춘 한글 커밋 메시지를 자동 생성하는 플러그인입니다. ANSI-safe 파이프라인과 `--amend` 지원을 포함합니다.
+
+```
+/plugin install commit@manuel71sj-plugins
+```
+
+**제공 스킬:**
+
+| 스킬 | 설명 |
+|------|------|
+| `/commit:commit` | 코드 수정 완료 후 Conventional Commits(한글, 범위 포함) 커밋 메시지 자동 생성 및 커밋 |
+
+자세한 내용은 [commit/README.md](./commit/README.md)를 참조하세요.
+
 ## 플러그인 관리
 
 ```
