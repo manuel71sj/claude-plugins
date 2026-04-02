@@ -10,6 +10,25 @@ glab is the official open-source GitLab CLI tool. It supports GitLab.com, GitLab
 
 > **Domain-specific skills:** MR workflow → `/glab-cli:mr`, CI/CD pipelines → `/glab-cli:ci`, Issues → `/glab-cli:issue`
 
+## ANSI 코드 방지 (필수)
+
+glab은 기본적으로 ANSI 이스케이프 코드(색상, 볼드 등)를 출력한다. 이 코드가 이슈/MR 설명에 포함되면 `\x1b[31m` 같은 깨진 문자가 나타난다. **모든 glab 명령 실행 시 반드시 `NO_COLOR=1`을 접두사로 사용한다:**
+
+```bash
+# 올바른 사용법
+NO_COLOR=1 glab issue list
+NO_COLOR=1 glab mr view 42
+
+# 잘못된 사용법 (ANSI 코드 포함됨)
+glab issue list
+```
+
+또한, 다른 명령(빌드 로그, 테스트 결과 등)의 출력을 이슈/MR 설명으로 사용할 때도 ANSI 코드를 반드시 제거한다:
+```bash
+# sed로 ANSI 코드 제거
+<command> 2>&1 | sed 's/\x1b\[[0-9;]*m//g'
+```
+
 ## Initial Setup for Self-Managed
 
 ### 1. Installation
@@ -133,118 +152,118 @@ Key variables for Self-Managed usage:
 
 ```bash
 # Create a release
-glab release create v1.0.0 --notes "Release notes here"
+NO_COLOR=1 glab release create v1.0.0 --notes "Release notes here"
 
 # Create release with assets
-glab release create v1.0.0 ./build.tar.gz --notes "With binary"
+NO_COLOR=1 glab release create v1.0.0 ./build.tar.gz --notes "With binary"
 
 # Create release with notes from file
-glab release create v1.0.0 --notes-file CHANGELOG.md
+NO_COLOR=1 glab release create v1.0.0 --notes-file CHANGELOG.md
 
 # Create release linked to milestone
-glab release create v1.0.0 --milestone "v1.0"
+NO_COLOR=1 glab release create v1.0.0 --milestone "v1.0"
 
 # List releases
-glab release list
+NO_COLOR=1 glab release list
 
 # View release details
-glab release view v1.0.0
+NO_COLOR=1 glab release view v1.0.0
 
 # Delete release
-glab release delete v1.0.0
+NO_COLOR=1 glab release delete v1.0.0
 
 # Upload asset to existing release
-glab release upload v1.0.0 ./new.tar.gz
+NO_COLOR=1 glab release upload v1.0.0 ./new.tar.gz
 
 # Generate changelog
-glab changelog generate
+NO_COLOR=1 glab changelog generate
 ```
 
 ## Repository Operations
 
 ```bash
 # Clone a repo (with GITLAB_HOST for self-managed)
-GITLAB_HOST=gitlab.example.com glab repo clone group/project
+NO_COLOR=1 GITLAB_HOST=gitlab.example.com glab repo clone group/project
 
 # Clone all repos in a group
-GITLAB_HOST=gitlab.example.com glab repo clone -g my-group
+NO_COLOR=1 GITLAB_HOST=gitlab.example.com glab repo clone -g my-group
 
 # View repo info
-glab repo view
+NO_COLOR=1 glab repo view
 
 # Open in browser
-glab repo view --web
+NO_COLOR=1 glab repo view --web
 
 # Download repo archive
-glab repo archive
+NO_COLOR=1 glab repo archive
 
 # Fork current repo
-glab repo fork
+NO_COLOR=1 glab repo fork
 
 # Search repositories
-glab repo search "query"
+NO_COLOR=1 glab repo search "query"
 ```
 
 ### Deploy Keys
 ```bash
-glab deploy-key list                   # List deploy keys
-glab deploy-key create                 # Add a deploy key
-glab deploy-key delete <key-id>        # Remove a deploy key
+NO_COLOR=1 glab deploy-key list                   # List deploy keys
+NO_COLOR=1 glab deploy-key create                 # Add a deploy key
+NO_COLOR=1 glab deploy-key delete <key-id>        # Remove a deploy key
 ```
 
 ### SSH & GPG Keys
 ```bash
-glab ssh-key list                      # List SSH keys
-glab ssh-key add                       # Add SSH key
-glab gpg-key list                      # List GPG keys
+NO_COLOR=1 glab ssh-key list                      # List SSH keys
+NO_COLOR=1 glab ssh-key add                       # Add SSH key
+NO_COLOR=1 glab gpg-key list                      # List GPG keys
 ```
 
 ## Variables & Secrets
 
 ```bash
 # List project CI/CD variables
-glab variable list
+NO_COLOR=1 glab variable list
 
 # Set a variable
-glab variable set MY_VAR "my_value"
+NO_COLOR=1 glab variable set MY_VAR "my_value"
 
 # Set with environment scope
-glab variable set MY_VAR "my_value" --scope production
+NO_COLOR=1 glab variable set MY_VAR "my_value" --scope production
 
 # Get a variable
-glab variable get MY_VAR
+NO_COLOR=1 glab variable get MY_VAR
 
 # Delete a variable
-glab variable delete MY_VAR
+NO_COLOR=1 glab variable delete MY_VAR
 ```
 
 ### Secure Files
 ```bash
-glab securefile list                   # List secure files
-glab securefile upload ./cert.pem      # Upload secure file
+NO_COLOR=1 glab securefile list                   # List secure files
+NO_COLOR=1 glab securefile upload ./cert.pem      # Upload secure file
 ```
 
 ## Snippets
 
 ```bash
-glab snippet create                    # Interactive snippet creation
-glab snippet create -t "Title" -f file.py  # From file
-glab snippet list                      # List snippets
-glab snippet view <id>                 # View snippet
+NO_COLOR=1 glab snippet create                    # Interactive snippet creation
+NO_COLOR=1 glab snippet create -t "Title" -f file.py  # From file
+NO_COLOR=1 glab snippet list                      # List snippets
+NO_COLOR=1 glab snippet view <id>                 # View snippet
 ```
 
 ## Labels, Milestones & Iterations
 
 ```bash
 # Labels
-glab label list                        # List labels
-glab label create -n "label-name" -c "#ff0000"  # Create label
+NO_COLOR=1 glab label list                        # List labels
+NO_COLOR=1 glab label create -n "label-name" -c "#ff0000"  # Create label
 
 # Milestones
-glab milestone list                    # List milestones
+NO_COLOR=1 glab milestone list                    # List milestones
 
 # Iterations
-glab iteration list                    # List iterations
+NO_COLOR=1 glab iteration list                    # List iterations
 ```
 
 ## API Direct Access
@@ -252,44 +271,44 @@ glab iteration list                    # List iterations
 Use `glab api` for endpoints not covered by dedicated commands:
 ```bash
 # GET request
-glab api projects/:id/members
+NO_COLOR=1 glab api projects/:id/members
 
 # POST request
-glab api projects/:id/issues -X POST -f title="New issue" -f description="Details"
+NO_COLOR=1 glab api projects/:id/issues -X POST -f title="New issue" -f description="Details"
 
 # PUT request
-glab api projects/:id/issues/1 -X PUT -f state_event=close
+NO_COLOR=1 glab api projects/:id/issues/1 -X PUT -f state_event=close
 
 # With pagination
-glab api projects/:id/merge_requests --paginate
+NO_COLOR=1 glab api projects/:id/merge_requests --paginate
 
 # JSON output piped to jq
-glab api projects/:id/pipelines | jq '.[0].id'
+NO_COLOR=1 glab api projects/:id/pipelines | jq '.[0].id'
 ```
 The `:fullpath` and `:id` placeholders auto-resolve from the current repository context.
 
 ## Stacked Diffs Workflow
 
 ```bash
-glab stack create                      # Start a new stack
-glab stack list                        # List stacks
-glab stack sync                        # Sync stack with remote
+NO_COLOR=1 glab stack create                      # Start a new stack
+NO_COLOR=1 glab stack list                        # List stacks
+NO_COLOR=1 glab stack sync                        # Sync stack with remote
 ```
 
 ## Project Access Tokens
 
 ```bash
-glab token create -n "token-name" -S api  # Create a project access token
-glab token list                            # List project access tokens
-glab token revoke <token-id>               # Revoke a token
+NO_COLOR=1 glab token create -n "token-name" -S api  # Create a project access token
+NO_COLOR=1 glab token list                            # List project access tokens
+NO_COLOR=1 glab token revoke <token-id>               # Revoke a token
 ```
 
 ## User & Work Items
 
 ```bash
-glab user events                       # View user activity events
-glab work-items list                   # List work items
-glab work-items view <id>              # View work item
+NO_COLOR=1 glab user events                       # View user activity events
+NO_COLOR=1 glab work-items list                   # List work items
+NO_COLOR=1 glab work-items view <id>              # View work item
 ```
 
 ## Useful Aliases
@@ -297,16 +316,16 @@ glab work-items view <id>              # View work item
 Save time with custom aliases:
 ```bash
 # Set alias
-glab alias set mrs 'mr list --assignee=@me'
-glab alias set pipelines 'ci list'
-glab alias set schedule_list 'api projects/:fullpath/pipeline_schedules/'
+NO_COLOR=1 glab alias set mrs 'mr list --assignee=@me'
+NO_COLOR=1 glab alias set pipelines 'ci list'
+NO_COLOR=1 glab alias set schedule_list 'api projects/:fullpath/pipeline_schedules/'
 
 # Use alias
-glab mrs
-glab pipelines
+NO_COLOR=1 glab mrs
+NO_COLOR=1 glab pipelines
 
 # Delete alias
-glab alias delete mrs
+NO_COLOR=1 glab alias delete mrs
 ```
 
 ## Shell Completion
@@ -364,10 +383,10 @@ glab auth login --hostname gitlab.internal.corp
 
 # glab auto-detects from git remote in the current repo
 # Or explicitly override:
-GITLAB_HOST=gitlab.internal.corp glab issue list
+NO_COLOR=1 GITLAB_HOST=gitlab.internal.corp glab issue list
 
 # Use --repo flag for cross-repo operations
-glab mr list --repo group/other-project
+NO_COLOR=1 glab mr list --repo group/other-project
 ```
 
 ## Global Flags
@@ -381,8 +400,8 @@ These flags work with most commands:
 
 Use `-R` or `--repo` to operate on a different repository without `cd`-ing:
 ```bash
-glab mr list --repo group/other-project
-glab issue list -R namespace/group/project
+NO_COLOR=1 glab mr list --repo group/other-project
+NO_COLOR=1 glab issue list -R namespace/group/project
 ```
 
 ## Troubleshooting

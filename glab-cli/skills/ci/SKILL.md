@@ -9,62 +9,64 @@ user-invocable: true
 Complete guide for managing CI/CD pipelines, jobs, schedules, and runners from the terminal using glab CLI.
 
 > **Related skills:** Setup/auth → `/glab-cli`, MR → `/glab-cli:mr`, Issues → `/glab-cli:issue`
+>
+> **필수:** 모든 glab 명령에 `NO_COLOR=1` 접두사를 사용하여 ANSI 이스케이프 코드가 출력/설명에 포함되지 않도록 한다. 다른 명령 출력을 설명에 포함할 때도 `sed 's/\x1b\[[0-9;]*m//g'`로 ANSI 코드를 제거한다.
 
 ## Pipeline Operations
 
 ```bash
 # Interactive TUI: view, run, trace, cancel jobs
-glab ci view
+NO_COLOR=1 glab ci view
 
 # List recent pipelines
-glab ci list
+NO_COLOR=1 glab ci list
 
 # Current branch pipeline status
-glab ci status
+NO_COLOR=1 glab ci status
 
 # Get JSON of current pipeline
-glab ci get
+NO_COLOR=1 glab ci get
 
 # Pipeline for specific branch
-glab ci get -b feature-branch
+NO_COLOR=1 glab ci get -b feature-branch
 
 # Trigger new pipeline on current branch
-glab ci run
+NO_COLOR=1 glab ci run
 
 # Trigger on specific branch
-glab ci run -b main
+NO_COLOR=1 glab ci run -b main
 
 # Retry failed pipeline
-glab ci retry <pipeline-id>
+NO_COLOR=1 glab ci retry <pipeline-id>
 
 # Delete a pipeline
-glab ci delete <pipeline-id>
+NO_COLOR=1 glab ci delete <pipeline-id>
 ```
 
 ## Job Operations
 
 ```bash
 # Tail current job log (follow output)
-glab ci trace
+NO_COLOR=1 glab ci trace
 
 # Tail specific job log
-glab ci trace <job-id>
+NO_COLOR=1 glab ci trace <job-id>
 
 # List jobs in current pipeline
-glab job list
+NO_COLOR=1 glab job list
 
 # Download job artifacts
-glab job artifact <job-id>
+NO_COLOR=1 glab job artifact <job-id>
 
 # Download artifacts from last pipeline
-glab ci artifact
+NO_COLOR=1 glab ci artifact
 ```
 
 ## CI Configuration
 
 ```bash
 # Validate .gitlab-ci.yml
-glab ci lint
+NO_COLOR=1 glab ci lint
 ```
 
 > Note: `glab ci lint` must be run from a git repo root that contains `.gitlab-ci.yml`.
@@ -73,23 +75,23 @@ glab ci lint
 
 ```bash
 # List pipeline schedules
-glab schedule list
+NO_COLOR=1 glab schedule list
 
 # Create a new schedule
-glab schedule create
+NO_COLOR=1 glab schedule create
 
 # Trigger a scheduled pipeline immediately
-glab schedule run <schedule-id>
+NO_COLOR=1 glab schedule run <schedule-id>
 
 # Delete a schedule
-glab schedule delete <schedule-id>
+NO_COLOR=1 glab schedule delete <schedule-id>
 ```
 
 ## Runners
 
 ```bash
 # List project runners
-glab runner list
+NO_COLOR=1 glab runner list
 ```
 
 ## CI Job Integration
@@ -128,20 +130,20 @@ before_script:
 ### Monitor Pipeline Progress
 ```bash
 # Check status
-glab ci status
+NO_COLOR=1 glab ci status
 
 # If failed, trace the failing job
-glab ci trace
+NO_COLOR=1 glab ci trace
 
 # Retry if transient failure
-glab ci retry <pipeline-id>
+NO_COLOR=1 glab ci retry <pipeline-id>
 ```
 
 ### Download Build Artifacts
 ```bash
 # From the last pipeline
-glab ci artifact
+NO_COLOR=1 glab ci artifact
 
 # From a specific job
-glab job artifact <job-id>
+NO_COLOR=1 glab job artifact <job-id>
 ```
