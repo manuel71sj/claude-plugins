@@ -28,7 +28,7 @@ glab mr view 42 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 `glab issue create -d`, `glab mr create -d`, `glab api -f` 등은 description에 ANSI 코드를 포함시켜 **GitLab에 저장하는 버그**가 있다. 반드시 `glab api --input` 방식을 사용한다:
 
 ```bash
-# 1. Write 도구로 JSON 파일 작성 (echo/printf 금지)
+# 1. Write 도구로 JSON 파일 작성 (echo/printf/cat heredoc 금지)
 #    /tmp/gl-payload.json: {"title":"이슈 제목","description":"설명"}
 
 # 2. --input으로 전달 (ANSI-safe)
@@ -303,7 +303,7 @@ Use `glab api` for endpoints not covered by dedicated commands:
 glab api projects/:id/members
 
 # POST request (--input 방식, -f는 ANSI 오염 버그)
-# Write 도구로 /tmp/gl-payload.json 작성 후:
+# Write 도구로 /tmp/gl-payload.json 작성 후 (echo/printf/cat heredoc 금지):
 glab api projects/:id/issues -X POST --input /tmp/gl-payload.json -H "Content-Type: application/json"
 
 # PUT request

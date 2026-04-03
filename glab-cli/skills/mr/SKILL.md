@@ -21,7 +21,7 @@ Complete guide for managing Merge Requests from the terminal using glab CLI.
 > **주의:** `glab mr create -d`는 ANSI 오염 버그가 있으므로 description이 필요한 경우 `glab api`를 사용한다.
 
 ```bash
-# 1. Write 도구로 JSON 파일 작성 (echo/printf 금지)
+# 1. Write 도구로 JSON 파일 작성 (echo/printf/cat heredoc 금지)
 #    /tmp/gl-payload.json: {"source_branch":"feature","target_branch":"main","title":"feat: new feature","description":"MR 설명"}
 
 # 2. --input으로 MR 생성 (ANSI-safe)
