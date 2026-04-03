@@ -10,76 +10,88 @@ Complete guide for managing Issues and Incidents from the terminal using glab CL
 
 > **Related skills:** Setup/auth → `/glab-cli`, MR → `/glab-cli:mr`, CI/CD → `/glab-cli:ci`
 >
-> **필수:** 모든 glab 명령에 `NO_COLOR=1` 접두사를 사용하여 ANSI 이스케이프 코드가 출력/설명에 포함되지 않도록 한다. 다른 명령 출력을 설명에 포함할 때도 `sed 's/\x1b\[[0-9;]*m//g'`로 ANSI 코드를 제거한다.
+> **필수 — ANSI 코드 방지:**
+> - **조회** (`list`, `view` 등): `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프 추가
+> - **생성/수정** (`create`, `update`, `note` 등): `glab issue create -d`는 description에 ANSI를 포함시켜 저장하는 버그가 있음 (v1.91+). **반드시 `glab api`로 생성/수정한다.**
+>
+> 아래 예제에는 간결성을 위해 sed가 생략되어 있으나, **조회 시 반드시 적용한다.**
 
 ## Creating Issues
 
+> **주의:** `glab issue create -d`는 ANSI 오염 버그가 있으므로 `glab api`를 사용한다.
+
 ```bash
-# Interactive (prompts for title, description, labels)
-NO_COLOR=1 glab issue create
+# 기본 이슈 생성
+glab api projects/:fullpath/issues -X POST \
+  -f "title=Bug: login broken" \
+  -f "description=설명 내용"
 
-# Non-interactive with title and description
-NO_COLOR=1 glab issue create -t "Title" -d "Description"
+# 라벨, 담당자 포함
+glab api projects/:fullpath/issues -X POST \
+  -f "title=Bug: login broken" \
+  -f "description=설명 내용" \
+  -f "labels=bug,critical" \
+  -f "assignee_ids[]=123"
 
-# With labels and assignee
-NO_COLOR=1 glab issue create -t "Bug: login broken" -l bug,critical -a @me
+# 간단한 이슈 (description 없음) — glab issue create 사용 가능
+glab issue create -t "Title" --no-editor
 
-# Open in browser after creation
-NO_COLOR=1 glab issue create --web
+# 브라우저에서 생성 (ANSI 문제 없음)
+glab issue create --web
 ```
 
 ## Listing & Viewing
 
 ```bash
 # List open issues
-NO_COLOR=1 glab issue list
+glab issue list
 
 # Issues assigned to me
-NO_COLOR=1 glab issue list --assignee=@me
+glab issue list --assignee=@me
 
 # Filter by label
-NO_COLOR=1 glab issue list -l bug
+glab issue list -l bug
 
 # Filter by milestone
-NO_COLOR=1 glab issue list --milestone "v1.0"
+glab issue list --milestone "v1.0"
 
 # Search issues by keyword
-NO_COLOR=1 glab issue list --search "keyword"
+glab issue list --search "keyword"
 
 # View issue details
-NO_COLOR=1 glab issue view 123
+glab issue view 123
 
 # Open in browser
-NO_COLOR=1 glab issue view 123 --web
+glab issue view 123 --web
 ```
 
 ## Managing Issues
 
 ```bash
 # Close issue
-NO_COLOR=1 glab issue close 123
+glab issue close 123
 
 # Reopen issue
-NO_COLOR=1 glab issue reopen 123
+glab issue reopen 123
 
 # Add comment
-NO_COLOR=1 glab issue note 123 -m "Comment text"
+glab issue note 123 -m "Comment text"
 
 # Subscribe to notifications
-NO_COLOR=1 glab issue subscribe 123
+glab issue subscribe 123
 
 # Unsubscribe
-NO_COLOR=1 glab issue unsubscribe 123
+glab issue unsubscribe 123
 ```
 
 ## Incidents
 
 ```bash
 # List incidents
-NO_COLOR=1 glab incident list
+glab incident list
 
 # View incident details
-NO_COLOR=1 glab incident view 456
+glab incident view 456
 ```
 
 ## Common Workflows
@@ -87,20 +99,20 @@ NO_COLOR=1 glab incident view 456
 ### Bug Report → Fix → Close
 ```bash
 # 1. Create the issue
-NO_COLOR=1 glab issue create -t "Bug: API returns 500 on empty input" -l bug,high-priority
+glab issue create -t "Bug: API returns 500 on empty input" -l bug,high-priority
 
 # 2. Create a branch and MR referencing the issue
-NO_COLOR=1 glab mr create -i 123 --copy-issue-labels -b main
+glab mr create -i 123 --copy-issue-labels -b main
 
 # 3. After merge, close the issue
-NO_COLOR=1 glab issue close 123
+glab issue close 123
 ```
 
 ### Cross-Repository Operations
 ```bash
 # List issues in another project
-NO_COLOR=1 glab issue list --repo group/other-project
+glab issue list --repo group/other-project
 
 # View issue in another project
-NO_COLOR=1 glab issue view 123 -R namespace/group/project
+glab issue view 123 -R namespace/group/project
 ```
