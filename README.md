@@ -82,7 +82,7 @@ claude --channels plugin:telegram@manuel71sj-plugins
 
 ### glab-cli
 
-GitLab Self-Managed 환경을 위한 glab CLI 레퍼런스 가이드 플러그인입니다. 설정, 인증, MR, CI/CD, 이슈 관리 등을 포함합니다.
+GitLab Self-Managed 환경을 위한 glab CLI 레퍼런스 가이드 플러그인입니다. 설정, 인증, MR, CI/CD, 이슈 관리 등을 포함합니다. glab v1.91+의 ANSI 오염 버그를 우회하는 `--input` 기반 ANSI-safe 패턴을 내장하고 있습니다.
 
 ```
 /plugin install glab-cli@manuel71sj-plugins

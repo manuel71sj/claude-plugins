@@ -12,7 +12,7 @@ Complete guide for managing Issues and Incidents from the terminal using glab CL
 >
 > **필수 — ANSI 코드 방지:**
 > - **조회** (`list`, `view` 등): `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프 추가
-> - **생성/수정** (`create`, `update`, `note` 등): `glab issue create -d`는 description에 ANSI를 포함시켜 저장하는 버그가 있음 (v1.91+). **반드시 `glab api`로 생성/수정한다.**
+> - **생성/수정** (`create`, `update`, `note` 등): `glab issue create -d` 및 `glab api -f`는 ANSI를 포함시켜 저장하는 버그가 있음 (v1.91+). **반드시 `glab api --input` 방식으로 생성/수정한다.**
 >
 > 아래 예제에는 간결성을 위해 sed가 생략되어 있으나, **조회 시 반드시 적용한다.**
 
@@ -21,17 +21,19 @@ Complete guide for managing Issues and Incidents from the terminal using glab CL
 > **주의:** `glab issue create -d`는 ANSI 오염 버그가 있으므로 `glab api`를 사용한다.
 
 ```bash
-# 기본 이슈 생성
+# 1. Write 도구로 JSON 파일 작성 (echo/printf 금지)
+#    /tmp/gl-payload.json: {"title":"Bug: login broken","description":"설명 내용"}
+
+# 2. --input으로 이슈 생성 (ANSI-safe)
 glab api projects/:fullpath/issues -X POST \
-  -f "title=Bug: login broken" \
-  -f "description=설명 내용"
+  --input /tmp/gl-payload.json \
+  -H "Content-Type: application/json"
 
 # 라벨, 담당자 포함
+# /tmp/gl-payload.json: {"title":"Bug: login broken","description":"설명","labels":"bug,critical","assignee_ids":[123]}
 glab api projects/:fullpath/issues -X POST \
-  -f "title=Bug: login broken" \
-  -f "description=설명 내용" \
-  -f "labels=bug,critical" \
-  -f "assignee_ids[]=123"
+  --input /tmp/gl-payload.json \
+  -H "Content-Type: application/json"
 
 # 간단한 이슈 (description 없음) — glab issue create 사용 가능
 glab issue create -t "Title" --no-editor

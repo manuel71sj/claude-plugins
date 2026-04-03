@@ -5,12 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2026-04-03
+
+### Fixed
+
+- `glab api -f` (--field/--raw-field) 방식도 ANSI 오염 확인 — `glab api --input` + JSON 파일 방식으로 전면 교체
+- 이슈/MR 생성·수정 예제를 모두 `--input` 방식으로 변경
+
 ## [0.0.3] - 2026-04-03
 
 ### Fixed
 
 - `NO_COLOR=1`이 glab v1.91+에서 무시되는 문제 대응 — sed 파이프 방식으로 ANSI 제거 패턴 전면 교체
-- `glab issue create -d`/`glab mr create -d`가 description에 ANSI를 포함시켜 GitLab에 저장하는 버그 발견 — 생성/수정은 `glab api` 사용 필수로 변경
+- `glab issue create -d`/`glab mr create -d`가 description에 ANSI를 포함시켜 저장하는 버그 발견
 - 4개 스킬 문서(glab-cli, issue, mr, ci)의 ANSI 방지 지침을 조회/생성 구분으로 전면 개편
 - sed 패턴을 `[a-zA-Z]`로 확장하여 SGR 외 ANSI 시퀀스도 제거
 
