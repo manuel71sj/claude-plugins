@@ -132,8 +132,10 @@ glab mr close 42
 # Reopen closed MR
 glab mr reopen 42
 
-# Add a comment
-glab mr note 42 -m "Comment text"
+# Add a comment (glab api --input 사용, -m은 ANSI 오염)
+# Write 도구로 /tmp/gl-payload.json 작성: {"body":"Comment text"}
+glab api projects/:fullpath/merge_requests/42/notes -X POST \
+  --input /tmp/gl-payload.json -H "Content-Type: application/json"
 
 # Add MR to your todo list
 glab mr todo 42

@@ -76,8 +76,10 @@ glab issue close 123
 # Reopen issue
 glab issue reopen 123
 
-# Add comment
-glab issue note 123 -m "Comment text"
+# Add comment (glab api --input 사용, -m은 ANSI 오염)
+# Write 도구로 /tmp/gl-payload.json 작성: {"body":"Comment text"}
+glab api projects/:fullpath/issues/123/notes -X POST \
+  --input /tmp/gl-payload.json -H "Content-Type: application/json"
 
 # Subscribe to notifications
 glab issue subscribe 123
