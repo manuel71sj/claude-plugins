@@ -25,29 +25,34 @@ glab mr view 42 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
 ### 생성/수정 명령 — `glab api` 사용 필수
 
-`glab issue create -d`, `glab mr create -d`, `glab api -f` 등은 description에 ANSI 코드를 포함시켜 **GitLab에 저장하는 버그**가 있다. 반드시 `glab api --input` 방식을 사용한다:
+`glab issue create -d`, `glab mr create -d`, 인라인 `glab api -f "key=value"` 등은 description에 ANSI 코드를 포함시켜 **GitLab에 저장하는 버그**가 있다. 반드시 **Claude Code의 Write 도구**로 `/tmp/gl-body.md` 파일을 작성한 뒤 `glab api -F "field=@/tmp/gl-body.md"` 방식을 사용한다. Bash의 echo/printf/cat heredoc으로 파일을 생성하면 ANSI가 삽입되므로 금지:
 
 ```bash
-# 1. Write 도구로 JSON 파일 작성 (echo/printf/cat heredoc 금지)
-#    /tmp/gl-payload.json: {"title":"이슈 제목","description":"설명"}
+# 1. Write 도구로 본문 파일 작성 (echo/printf/cat heredoc 금지)
+#    /tmp/gl-body.md 에 마크다운 내용 작성
 
-# 2. --input으로 전달 (ANSI-safe)
+# 2. -F field=@file로 전달 (ANSI-safe)
+# 이슈 생성
 glab api projects/:fullpath/issues -X POST \
-  --input /tmp/gl-payload.json \
-  -H "Content-Type: application/json" \
+  -F "title=이슈 제목" \
+  -F "description=@/tmp/gl-body.md" \
   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
 # 이슈 수정
 glab api projects/:fullpath/issues/123 -X PUT \
-  --input /tmp/gl-payload.json \
-  -H "Content-Type: application/json" \
+  -F "description=@/tmp/gl-body.md" \
+  2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+
+# 이슈/MR 코멘트
+glab api projects/:fullpath/issues/123/notes -X POST \
+  -F "body=@/tmp/gl-body.md" \
   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
 # MR 생성
-# /tmp/gl-payload.json: {"source_branch":"feature","target_branch":"main","title":"MR 제목","description":"설명"}
 glab api projects/:fullpath/merge_requests -X POST \
-  --input /tmp/gl-payload.json \
-  -H "Content-Type: application/json" \
+  -F "source_branch=feature" -F "target_branch=main" \
+  -F "title=MR 제목" \
+  -F "description=@/tmp/gl-body.md" \
   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 ```
 
@@ -302,12 +307,11 @@ Use `glab api` for endpoints not covered by dedicated commands:
 # GET request
 glab api projects/:id/members
 
-# POST request (--input 방식, -f는 ANSI 오염 버그)
-# Write 도구로 /tmp/gl-payload.json 작성 후 (echo/printf/cat heredoc 금지):
-glab api projects/:id/issues -X POST --input /tmp/gl-payload.json -H "Content-Type: application/json"
+# POST request (-F field=@file 방식, Write 도구로 /tmp/gl-body.md 작성 후)
+glab api projects/:id/issues -X POST -F "title=New issue" -F "description=@/tmp/gl-body.md"
 
 # PUT request
-glab api projects/:id/issues/1 -X PUT --input /tmp/gl-payload.json -H "Content-Type: application/json"
+glab api projects/:id/issues/1 -X PUT -F "description=@/tmp/gl-body.md"
 
 # With pagination
 glab api projects/:id/merge_requests --paginate

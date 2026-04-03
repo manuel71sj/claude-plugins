@@ -12,7 +12,7 @@ Complete guide for managing Merge Requests from the terminal using glab CLI.
 >
 > **필수 — ANSI 코드 방지:**
 > - **조회** (`list`, `view`, `diff` 등): `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프 추가
-> - **생성/수정** (`create`, `update`, `note` 등): `glab mr create -d` 및 `glab api -f`는 ANSI를 포함시켜 저장하는 버그가 있음 (v1.91+). **반드시 `glab api --input` 방식으로 생성/수정한다.**
+> - **생성/수정** (`create`, `update`, `note` 등): `glab mr create -d` 및 인라인 `-f "key=value"`는 ANSI 오염 버그가 있음 (v1.91+). **반드시 Write 도구로 `/tmp/gl-body.md` 작성 후 `glab api -F "field=@/tmp/gl-body.md"` 방식을 사용한다.** Bash의 echo/printf/cat heredoc으로 파일을 생성하면 ANSI가 삽입된다.
 >
 > 아래 예제에는 간결성을 위해 sed가 생략되어 있으나, **조회 시 반드시 적용한다.**
 
@@ -21,13 +21,14 @@ Complete guide for managing Merge Requests from the terminal using glab CLI.
 > **주의:** `glab mr create -d`는 ANSI 오염 버그가 있으므로 description이 필요한 경우 `glab api`를 사용한다.
 
 ```bash
-# 1. Write 도구로 JSON 파일 작성 (echo/printf/cat heredoc 금지)
-#    /tmp/gl-payload.json: {"source_branch":"feature","target_branch":"main","title":"feat: new feature","description":"MR 설명"}
+# 1. Write 도구로 본문 파일 작성 (echo/printf/cat heredoc 금지)
+#    /tmp/gl-body.md 에 마크다운 내용 작성
 
-# 2. --input으로 MR 생성 (ANSI-safe)
+# 2. -F field=@file로 MR 생성 (ANSI-safe)
 glab api projects/:fullpath/merge_requests -X POST \
-  --input /tmp/gl-payload.json \
-  -H "Content-Type: application/json"
+  -F "source_branch=feature" -F "target_branch=main" \
+  -F "title=feat: new feature" \
+  -F "description=@/tmp/gl-body.md"
 
 # 커밋에서 auto-fill (description 없이) — glab mr create 사용 가능
 glab mr create --fill --yes
@@ -132,10 +133,9 @@ glab mr close 42
 # Reopen closed MR
 glab mr reopen 42
 
-# Add a comment (glab api --input 사용, -m은 ANSI 오염)
-# Write 도구로 /tmp/gl-payload.json 작성: {"body":"Comment text"}
+# Add a comment (Write 도구로 /tmp/gl-body.md 작성 후)
 glab api projects/:fullpath/merge_requests/42/notes -X POST \
-  --input /tmp/gl-payload.json -H "Content-Type: application/json"
+  -F "body=@/tmp/gl-body.md"
 
 # Add MR to your todo list
 glab mr todo 42

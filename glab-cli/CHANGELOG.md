@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2026-04-03
+
+### Changed
+
+- ANSI-safe 패턴을 `--input JSON` 방식에서 `-F field=@file` 방식으로 전면 교체
+- 본문 파일은 반드시 Claude Code의 Write 도구로 작성 (Bash echo/printf/cat heredoc 금지 강화)
+- 이슈/MR 생성, 수정, 코멘트 예제 모두 `-F "body=@/tmp/gl-body.md"` 패턴으로 통일
+
 ## [0.0.6] - 2026-04-03
 
 ### Fixed

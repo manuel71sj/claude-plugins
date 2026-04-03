@@ -1,7 +1,7 @@
 {
   "name": "glab-cli",
   "description": "GitLab CLI (glab) reference guide for Self-Managed environments — setup, authentication, merge requests, CI/CD, issues, and more.",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": {"name": "manuel71"},
   "homepage": "https://github.com/manuel71/claude-plugins",
   "repository": "https://github.com/manuel71/claude-plugins",
