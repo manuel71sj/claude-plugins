@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-04-03
+
+### Changed
+
+- 4개 스킬(glab-cli, mr, issue, ci) 전면 재작성 — 명령어 레퍼런스 나열에서 워크플로우 중심 구조로 전환
+- 각 스킬에 `references/` 하위 디렉토리 추가하여 상세 명령어를 분리 (progressive disclosure)
+- ANSI 코드 방지 규칙을 glab-cli 메인 스킬에 중앙 집중 정의, 나머지 스킬은 간결한 참조 블록으로 교체
+- 실제 업무 시나리오 기반 워크플로우 섹션 추가 (버그 수정, 코드 리뷰, 파이프라인 디버그 등)
+
 ## [0.0.7] - 2026-04-03
 
 ### Changed

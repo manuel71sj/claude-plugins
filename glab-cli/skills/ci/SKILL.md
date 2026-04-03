@@ -4,110 +4,146 @@ description: GitLab CI/CD pipeline management guide using glab CLI. Use for view
 user-invocable: true
 ---
 
-# GitLab CI/CD Pipeline Management (glab ci)
+# GitLab CI/CD 파이프라인 관리 (glab ci)
 
-Complete guide for managing CI/CD pipelines, jobs, schedules, and runners from the terminal using glab CLI.
+파이프라인, 잡, 스케줄, 러너를 터미널에서 관리하는 가이드.
 
-> **Related skills:** Setup/auth → `/glab-cli`, MR → `/glab-cli:mr`, Issues → `/glab-cli:issue`
+> **관련 스킬:** 설정/인증 → `/glab-cli` | MR → `/glab-cli:mr` | 이슈 → `/glab-cli:issue`
 >
-> **필수 — ANSI 코드 방지:** glab v1.91+는 `NO_COLOR=1`을 무시한다. 모든 조회 명령에 `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프를 추가한다. 아래 예제에는 간결성을 위해 생략되어 있으나, **실제 Bash 실행 시 반드시 적용한다.**
+> **ANSI 방지 (필수):** 모든 조회 출력에 `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프.
+> 상세 규칙: `/glab-cli`의 "ANSI 코드 방지" 섹션 참조.
+>
+> 아래 예제에는 간결성을 위해 sed가 생략되어 있으나, **실제 Bash 실행 시 반드시 적용한다.**
 
-## Pipeline Operations
+---
+
+## 워크플로우
+
+### 파이프라인 실패 → 디버그 → 수정
 
 ```bash
-# Interactive TUI: view, run, trace, cancel jobs
-glab ci view
-
-# List recent pipelines
-glab ci list
-
-# Current branch pipeline status
+# 1. 현재 파이프라인 상태 확인
 glab ci status
 
-# Get JSON of current pipeline
-glab ci get
-
-# Pipeline for specific branch
-glab ci get -b feature-branch
-
-# Trigger new pipeline on current branch
-glab ci run
-
-# Trigger on specific branch
-glab ci run -b main
-
-# Retry failed pipeline
-glab ci retry <pipeline-id>
-
-# Delete a pipeline
-glab ci delete <pipeline-id>
-```
-
-## Job Operations
-
-```bash
-# Tail current job log (follow output)
+# 2. 실패한 잡 로그 추적
 glab ci trace
 
-# Tail specific job log
-glab ci trace <job-id>
+# 3-a. 일시적 실패라면 재시도
+glab ci retry <pipeline-id>
 
-# List jobs in current pipeline
-glab job list
+# 3-b. 코드 문제라면 수정 후 재푸시
+git add -A && git commit -F /tmp/commit-msg.txt
+git push
 
-# Download job artifacts
-glab job artifact <job-id>
-
-# Download artifacts from last pipeline
-glab ci artifact
+# 4. 파이프라인 재확인
+glab ci status --live
 ```
 
-## CI Configuration
+### CI 설정 검증 후 Push
 
 ```bash
-# Validate .gitlab-ci.yml
+# 1. .gitlab-ci.yml 검증
 glab ci lint
+
+# 2. 문제 없으면 커밋 & 푸시
+git add .gitlab-ci.yml
+git commit -F /tmp/commit-msg.txt
+git push
 ```
 
-> Note: `glab ci lint` must be run from a git repo root that contains `.gitlab-ci.yml`.
-
-## Pipeline Schedules
+### 수동 파이프라인 트리거
 
 ```bash
-# List pipeline schedules
-glab schedule list
+# 현재 브랜치에서 트리거
+glab ci run
 
-# Create a new schedule
-glab schedule create
-
-# Trigger a scheduled pipeline immediately
-glab schedule run <schedule-id>
-
-# Delete a schedule
-glab schedule delete <schedule-id>
+# 특정 브랜치에서 트리거
+glab ci run -b main
 ```
 
-## Runners
+### 아티팩트 다운로드
 
 ```bash
-# List project runners
-glab runner list
+# 마지막 파이프라인에서
+glab ci artifact
+
+# 특정 잡에서
+glab job artifact <job-id>
 ```
 
-## CI Job Integration
+---
 
-When running glab inside GitLab CI jobs:
+## 주요 명령어
 
-### Using CI Job Token (Recommended)
+### 파이프라인
+
+```bash
+glab ci view                         # 인터랙티브 TUI
+glab ci list                         # 최근 파이프라인 목록
+glab ci status                       # 현재 브랜치 상태
+glab ci status --live                # 실시간 상태
+glab ci get                          # 현재 파이프라인 JSON
+glab ci get -b feature               # 특정 브랜치
+glab ci run                          # 파이프라인 트리거
+glab ci run -b main                  # 특정 브랜치 트리거
+glab ci retry <pipeline-id>          # 실패 파이프라인 재시도
+glab ci delete <pipeline-id>         # 파이프라인 삭제
+```
+
+### 잡
+
+```bash
+glab ci trace                        # 현재 잡 로그 추적
+glab ci trace <job-id>               # 특정 잡 로그
+glab job list                        # 잡 목록
+glab job artifact <job-id>           # 잡 아티팩트 다운로드
+glab ci artifact                     # 마지막 파이프라인 아티팩트
+```
+
+### CI 설정
+
+```bash
+glab ci lint                         # .gitlab-ci.yml 검증
+```
+
+> git 저장소 루트에서 `.gitlab-ci.yml`이 있어야 동작한다.
+
+### 스케줄
+
+```bash
+glab schedule list                   # 스케줄 목록
+glab schedule create                 # 새 스케줄 (대화형)
+glab schedule run <id>               # 즉시 트리거
+glab schedule delete <id>            # 스케줄 삭제
+```
+
+### 러너
+
+```bash
+glab runner list                     # 프로젝트 러너 목록
+```
+
+---
+
+## CI Job 연동
+
+GitLab CI 잡 내부에서 glab을 실행할 때.
+
+### CI Job Token (권장)
+
 ```yaml
 # .gitlab-ci.yml
 release_job:
   script:
-    - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST --api-protocol $CI_SERVER_PROTOCOL
-    - GITLAB_HOST=$CI_SERVER_URL glab release create $CI_COMMIT_TAG --notes "Auto release"
+    - glab auth login --job-token $CI_JOB_TOKEN \
+        --hostname $CI_SERVER_HOST \
+        --api-protocol $CI_SERVER_PROTOCOL
+    - GITLAB_HOST=$CI_SERVER_URL glab release create $CI_COMMIT_TAG \
+        --notes "Auto release"
 ```
 
-### Using Auto-Login (Experimental)
+### Auto-Login (실험적)
+
 ```yaml
 release_job:
   variables:
@@ -116,34 +152,19 @@ release_job:
     - glab release list -R $CI_PROJECT_PATH
 ```
 
-Auto-login detects the CI environment automatically using `GITLAB_CI`, `CI_SERVER_FQDN`, and `CI_JOB_TOKEN`. Only commands compatible with `CI_JOB_TOKEN` are available in this mode.
+`GITLAB_CI`, `CI_SERVER_FQDN`, `CI_JOB_TOKEN`을 자동 감지. `CI_JOB_TOKEN` 호환 명령만 사용 가능.
 
-### Self-Signed Certs in CI
+### 자체 서명 인증서 in CI
+
 ```yaml
 before_script:
   - echo "$CUSTOM_CA_CERT" > /tmp/ca.pem
   - glab config set ca_cert /tmp/ca.pem --host $CI_SERVER_FQDN
 ```
 
-## Common Workflows
+---
 
-### Monitor Pipeline Progress
-```bash
-# Check status
-glab ci status
+## 상세 레퍼런스
 
-# If failed, trace the failing job
-glab ci trace
-
-# Retry if transient failure
-glab ci retry <pipeline-id>
-```
-
-### Download Build Artifacts
-```bash
-# From the last pipeline
-glab ci artifact
-
-# From a specific job
-glab job artifact <job-id>
-```
+전체 플래그, 옵션: `references/commands.md` 참조
+트러블슈팅, CI 연동 상세: `/glab-cli`의 `references/troubleshooting.md` 참조
