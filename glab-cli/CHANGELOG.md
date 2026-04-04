@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-04
+
+### Added
+
+- `work` 스킬 추가 — GitLab 이슈 수명주기 워크플로우 (시작→진행→완료)
+  - 키워드 자동 트리거 + 단계별 사용자 확인 방식
+  - `add_labels`/`remove_labels` 안전 라벨 전환 패턴
+  - Issue Links API, 마일스톤 조회, 사용자 ID 조회 패턴 포함
+  - ANSI 코드 검증 절차 포함
+
 ## [0.1.0] - 2026-04-03
 
 ### Changed
