@@ -81,7 +81,7 @@ glab mr diff <id>          # 변경 내용 보기
 > description 변경 시 `glab api`를 사용한다:
 > ```bash
 > glab api projects/:fullpath/merge_requests/<id> -X PUT \
->   -F "description=@/tmp/gl-body.md"
+>   -F "description=@.gl-body.md"
 > ```
 
 ## glab mr merge
@@ -111,20 +111,20 @@ glab mr unsubscribe <id>   # 구독 해제
 
 ## glab api로 MR 조작
 
-Write 도구로 `/tmp/gl-body.md`에 본문을 작성한 뒤 사용한다.
+Write 도구로 `.gl-body.md`에 본문을 작성한 뒤 사용한다.
 
 ```bash
 # MR 생성
 glab api projects/:fullpath/merge_requests -X POST \
   -F "source_branch=feature" -F "target_branch=main" \
   -F "title=feat: new feature" \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # MR 설명 수정
 glab api projects/:fullpath/merge_requests/<id> -X PUT \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # MR 코멘트 추가
 glab api projects/:fullpath/merge_requests/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 ```

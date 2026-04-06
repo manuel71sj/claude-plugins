@@ -69,29 +69,29 @@ glab issue board view <id>     # 보드 보기
 
 ## glab api로 이슈 조작
 
-Write 도구로 `/tmp/gl-body.md`에 본문을 작성한 뒤 사용한다.
+Write 도구로 `.gl-body.md`에 본문을 작성한 뒤 사용한다.
 
 ```bash
 # 이슈 생성
 glab api projects/:fullpath/issues -X POST \
   -F "title=Bug: login broken" \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # 라벨, 담당자, 마일스톤 포함 생성
 glab api projects/:fullpath/issues -X POST \
   -F "title=Bug: login broken" \
-  -F "description=@/tmp/gl-body.md" \
+  -F "description=@.gl-body.md" \
   -F "labels=bug,critical" \
   -F "assignee_ids[]=123" \
   -F "milestone_id=1"
 
 # 이슈 설명 수정
 glab api projects/:fullpath/issues/<id> -X PUT \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # 이슈 코멘트 추가
 glab api projects/:fullpath/issues/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 
 # 이슈 닫기 (API)
 glab api projects/:fullpath/issues/<id> -X PUT \

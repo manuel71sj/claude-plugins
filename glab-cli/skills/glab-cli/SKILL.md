@@ -31,26 +31,29 @@ glab <command> 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 `glab issue create -d`, `glab mr create -d`, 인라인 `glab api -f "key=value"` 등은 description에 ANSI 코드를 삽입하여 **GitLab DB에 오염된 데이터를 저장하는 버그**가 있다.
 
 **올바른 패턴:**
-1. Claude Code의 **Write 도구**로 `/tmp/gl-body.md` 파일을 작성한다
-2. `glab api -F "field=@/tmp/gl-body.md"` 로 파일 내용을 전달한다
+1. Claude Code의 **Write 도구**로 프로젝트 루트 `.gl-body.md` 파일을 작성한다
+2. `glab api -F "field=@.gl-body.md"` 로 파일 내용을 전달한다
+3. 완료 후 `rm .gl-body.md`로 삭제한다
+
+> **`/tmp` 경로 사용 금지** — `/tmp`에서 생성하면 ANSI 오염이 발생할 수 있다. 반드시 프로젝트 루트에 생성하고 사용 후 삭제한다.
 
 ```bash
 # 이슈 생성
 glab api projects/:fullpath/issues -X POST \
   -F "title=이슈 제목" \
-  -F "description=@/tmp/gl-body.md" \
+  -F "description=@.gl-body.md" \
   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
 # MR 생성
 glab api projects/:fullpath/merge_requests -X POST \
   -F "source_branch=feature" -F "target_branch=main" \
   -F "title=MR 제목" \
-  -F "description=@/tmp/gl-body.md" \
+  -F "description=@.gl-body.md" \
   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
 # 코멘트 추가 (이슈/MR 공통)
 glab api projects/:fullpath/issues/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md" \
+  -F "body=@.gl-body.md" \
   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 ```
 
@@ -63,9 +66,9 @@ glab api projects/:fullpath/issues/<id>/notes -X POST \
 | `glab issue note -m "..."` | 코멘트에 ANSI 삽입 |
 | `glab mr note -m "..."` | 코멘트에 ANSI 삽입 |
 | `glab api -f "key=value"` | 인라인 값에 ANSI 삽입 |
-| `echo "..." > /tmp/gl-body.md` | Bash가 ANSI 삽입 |
-| `printf "..." > /tmp/gl-body.md` | Bash가 ANSI 삽입 |
-| `cat <<'EOF' > /tmp/gl-body.md` | heredoc이 ANSI 삽입 |
+| `echo "..." > .gl-body.md` | Bash가 ANSI 삽입 |
+| `printf "..." > .gl-body.md` | Bash가 ANSI 삽입 |
+| `cat <<'EOF' > .gl-body.md` | heredoc이 ANSI 삽입 |
 
 ### git 작업
 
@@ -82,7 +85,7 @@ git diff --no-color
 | 작업 유형 | 패턴 |
 |-----------|------|
 | **조회** (list, view, diff) | `glab <cmd> 2>&1 \| sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` |
-| **생성/수정** (description, comment) | Write 도구 → `/tmp/gl-body.md` → `glab api -F "field=@/tmp/gl-body.md"` |
+| **생성/수정** (description, comment) | Write 도구 → `.gl-body.md` → `glab api -F "field=@.gl-body.md"` → `rm .gl-body.md` |
 | **간단 생성** (description 없음) | `glab issue create -t "Title" --no-editor` 또는 `glab mr create --fill --yes` |
 | **git commit** | Write 도구 → `/tmp/commit-msg.txt` → `git commit -F /tmp/commit-msg.txt` |
 | **git diff** | `git diff --no-color` |
@@ -213,13 +216,13 @@ glab config set telemetry false
 # GET
 glab api projects/:id/members
 
-# POST (Write 도구로 /tmp/gl-body.md 작성 후)
+# POST (Write 도구로 .gl-body.md 작성 후)
 glab api projects/:id/issues -X POST \
-  -F "title=New issue" -F "description=@/tmp/gl-body.md"
+  -F "title=New issue" -F "description=@.gl-body.md"
 
 # PUT
 glab api projects/:id/issues/1 -X PUT \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # 페이지네이션
 glab api projects/:id/merge_requests --paginate

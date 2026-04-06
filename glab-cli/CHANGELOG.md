@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-04-06
+
+### Fixed
+
+- 임시파일 경로를 `/tmp/gl-body.md`에서 프로젝트 루트 `.gl-body.md`로 전면 교체 (6개 파일)
+  - `/tmp` 경로에서 생성 시 ANSI 오염이 발생하는 문제 해결
+  - 사용 후 `rm .gl-body.md` 삭제 규칙 명시
+  - glab-cli 정식 정의에 `/tmp` 경로 사용 금지 규칙 추가
+
 ## [0.2.0] - 2026-04-04
 
 ### Added

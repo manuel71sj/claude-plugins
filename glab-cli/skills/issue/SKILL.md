@@ -11,7 +11,8 @@ user-invocable: true
 > **관련 스킬:** 설정/인증 → `/glab-cli` | MR → `/glab-cli:mr` | CI/CD → `/glab-cli:ci`
 >
 > **ANSI 방지 (필수):** 조회 → `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프.
-> 생성/수정 → Write 도구로 `/tmp/gl-body.md` 작성 → `glab api -F "field=@/tmp/gl-body.md"`.
+> 생성/수정 → Write 도구로 프로젝트 루트 `.gl-body.md` 작성 → `glab api -F "field=@.gl-body.md"` → 완료 후 `rm .gl-body.md`로 삭제.
+> **`/tmp` 경로 사용 금지** — `/tmp`에서 생성하면 ANSI 오염이 발생할 수 있다. 반드시 프로젝트 루트에 생성하고 사용 후 삭제한다.
 > `glab issue create -d`, `glab issue note -m`, 인라인 `-f`, Bash heredoc **금지**.
 > 상세 규칙: `/glab-cli`의 "ANSI 코드 방지" 섹션 참조.
 >
@@ -25,10 +26,10 @@ user-invocable: true
 
 ```bash
 # 1. 버그 이슈 생성 (description 포함 — glab api 사용)
-#    Write 도구로 /tmp/gl-body.md에 버그 상세 내용 작성 후:
+#    Write 도구로 .gl-body.md에 버그 상세 내용 작성 후:
 glab api projects/:fullpath/issues -X POST \
   -F "title=Bug: API가 빈 입력에 500 반환" \
-  -F "description=@/tmp/gl-body.md" \
+  -F "description=@.gl-body.md" \
   -F "labels=bug,high-priority"
 
 # 2. 이슈 번호 확인 후 브랜치 생성
@@ -49,10 +50,10 @@ glab issue close 123
 
 ```bash
 # 1. 기능 요청 이슈 생성
-#    Write 도구로 /tmp/gl-body.md에 요구사항 작성 후:
+#    Write 도구로 .gl-body.md에 요구사항 작성 후:
 glab api projects/:fullpath/issues -X POST \
   -F "title=feat: 대시보드에 차트 추가" \
-  -F "description=@/tmp/gl-body.md" \
+  -F "description=@.gl-body.md" \
   -F "labels=feature,enhancement"
 
 # 2. 마일스톤/담당자 지정 (API)
@@ -61,9 +62,9 @@ glab api projects/:fullpath/issues/<id> -X PUT \
   -F "assignee_ids[]=123"
 
 # 3. 진행 상황 코멘트
-#    Write 도구로 /tmp/gl-body.md 작성 후:
+#    Write 도구로 .gl-body.md 작성 후:
 glab api projects/:fullpath/issues/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 
 # 4. 완료 후 닫기
 glab issue close <id>
@@ -79,9 +80,9 @@ glab incident list
 glab incident view <id>
 
 # 3. 대응 코멘트 기록
-#    Write 도구로 /tmp/gl-body.md 작성 후:
+#    Write 도구로 .gl-body.md 작성 후:
 glab api projects/:fullpath/issues/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 ```
 
 ---
@@ -94,15 +95,15 @@ glab api projects/:fullpath/issues/<id>/notes -X POST \
 
 ```bash
 # glab api로 생성 (description 포함, ANSI-safe)
-# Write 도구로 /tmp/gl-body.md 작성 후:
+# Write 도구로 .gl-body.md 작성 후:
 glab api projects/:fullpath/issues -X POST \
   -F "title=Bug: login broken" \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # 라벨, 담당자 포함
 glab api projects/:fullpath/issues -X POST \
   -F "title=Bug: login broken" \
-  -F "description=@/tmp/gl-body.md" \
+  -F "description=@.gl-body.md" \
   -F "labels=bug,critical" \
   -F "assignee_ids[]=123"
 
@@ -133,13 +134,13 @@ glab issue reopen <id>               # 재오픈
 glab issue subscribe <id>            # 알림 구독
 glab issue unsubscribe <id>          # 구독 해제
 
-# 코멘트 추가 (Write 도구로 /tmp/gl-body.md 작성 후)
+# 코멘트 추가 (Write 도구로 .gl-body.md 작성 후)
 glab api projects/:fullpath/issues/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 
-# description 수정 (Write 도구로 /tmp/gl-body.md 작성 후)
+# description 수정 (Write 도구로 .gl-body.md 작성 후)
 glab api projects/:fullpath/issues/<id> -X PUT \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 ```
 
 ### 인시던트

@@ -11,7 +11,8 @@ MR의 전체 수명 주기를 터미널에서 관리하는 가이드.
 > **관련 스킬:** 설정/인증 → `/glab-cli` | CI/CD → `/glab-cli:ci` | 이슈 → `/glab-cli:issue`
 >
 > **ANSI 방지 (필수):** 조회 → `2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'` 파이프.
-> 생성/수정 → Write 도구로 `/tmp/gl-body.md` 작성 → `glab api -F "field=@/tmp/gl-body.md"`.
+> 생성/수정 → Write 도구로 프로젝트 루트 `.gl-body.md` 작성 → `glab api -F "field=@.gl-body.md"` → 완료 후 `rm .gl-body.md`로 삭제.
+> **`/tmp` 경로 사용 금지** — `/tmp`에서 생성하면 ANSI 오염이 발생할 수 있다. 반드시 프로젝트 루트에 생성하고 사용 후 삭제한다.
 > `glab mr create -d`, `glab mr note -m`, 인라인 `-f`, Bash heredoc **금지**.
 > 상세 규칙: `/glab-cli`의 "ANSI 코드 방지" 섹션 참조.
 >
@@ -35,11 +36,11 @@ git add -A && git commit -F /tmp/commit-msg.txt
 git push -u origin fix/issue-123
 
 # 4. MR 생성 (description 포함 — glab api 사용)
-#    Write 도구로 /tmp/gl-body.md 작성 후:
+#    Write 도구로 .gl-body.md 작성 후:
 glab api projects/:fullpath/merge_requests -X POST \
   -F "source_branch=fix/issue-123" -F "target_branch=main" \
   -F "title=fix: issue #123 로그인 오류 수정" \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # 5. 리뷰 요청
 glab mr update <mr-id> --reviewer reviewer1
@@ -93,9 +94,9 @@ glab mr checkout <id>
 # 2. 변경 내용 확인
 glab mr diff <id>
 
-# 3. 리뷰 코멘트 작성 (Write 도구로 /tmp/gl-body.md 작성 후)
+# 3. 리뷰 코멘트 작성 (Write 도구로 .gl-body.md 작성 후)
 glab api projects/:fullpath/merge_requests/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 
 # 4. 승인 또는 변경 요청
 glab mr approve <id>
@@ -112,11 +113,11 @@ glab mr approve <id>
 
 ```bash
 # glab api로 생성 (description 포함, ANSI-safe)
-# Write 도구로 /tmp/gl-body.md 작성 후:
+# Write 도구로 .gl-body.md 작성 후:
 glab api projects/:fullpath/merge_requests -X POST \
   -F "source_branch=feature" -F "target_branch=main" \
   -F "title=feat: new feature" \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 
 # 커밋에서 auto-fill (description 없이)
 glab mr create --fill --yes
@@ -170,13 +171,13 @@ glab mr reopen <id>                 # 재오픈
 glab mr todo <id>                   # TODO에 추가
 glab mr subscribe <id>              # 알림 구독
 
-# 코멘트 추가 (Write 도구로 /tmp/gl-body.md 작성 후)
+# 코멘트 추가 (Write 도구로 .gl-body.md 작성 후)
 glab api projects/:fullpath/merge_requests/<id>/notes -X POST \
-  -F "body=@/tmp/gl-body.md"
+  -F "body=@.gl-body.md"
 
-# description 수정 (Write 도구로 /tmp/gl-body.md 작성 후)
+# description 수정 (Write 도구로 .gl-body.md 작성 후)
 glab api projects/:fullpath/merge_requests/<id> -X PUT \
-  -F "description=@/tmp/gl-body.md"
+  -F "description=@.gl-body.md"
 ```
 
 ### 다른 프로젝트 조작
