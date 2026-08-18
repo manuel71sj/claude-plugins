@@ -17,6 +17,8 @@
 |-------------|------|------|
 | `x509: certificate signed by unknown authority` | 자체 서명 인증서 미신뢰 | `glab config set ca_cert /path/cert.pem --host <host>` 또는 시스템 신뢰 저장소에 추가 |
 | `401 Unauthorized` | 토큰 만료 또는 권한 부족 | `glab auth login` 재실행, PAT에 `api` + `write_repository` 스코프 확인 |
+| `Could not determine base repository: none of the git remotes ... correspond to the GITLAB_HOST` | remote 호스트와 `GITLAB_HOST`/config 호스트 문자열 불일치 (포트·프로토콜 차이 포함) | `unset GITLAB_HOST` 후 `glab config set api_host <host:port> --host <host>` 로 API 포트 분리. 또는 `-R <host:port>/<group>/<repo>` 명시 |
+| `none of the git remotes ... point to a known GitLab host` | glab config에 remote 호스트 미등록 | `glab auth login --hostname <remote-host> --api-host <host:port>` |
 | Wrong GitLab host detected | git remote가 다른 호스트 가리킴 | `GITLAB_HOST` 환경 변수 설정 또는 `git remote -v`로 확인 |
 | Commands default to gitlab.com | 리모트가 Self-Managed가 아닌 gitlab.com 가리킴 | 저장소 리모트를 Self-Managed 인스턴스로 수정 |
 | Token expired | PAT 유효기간 만료 | PAT 재생성 후 `glab auth login` |

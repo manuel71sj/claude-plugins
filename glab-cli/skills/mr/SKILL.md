@@ -1,6 +1,7 @@
 ---
 name: mr
 description: GitLab Merge Request workflow guide using glab CLI. Use for creating, reviewing, approving, and merging MRs from the terminal. Trigger on glab mr, merge request, MR create, MR review, MR approve, MR merge, glab mr list, glab mr checkout.
+model: haiku
 user-invocable: true
 ---
 

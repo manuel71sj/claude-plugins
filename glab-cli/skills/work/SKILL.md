@@ -1,6 +1,7 @@
 ---
 name: work
 description: GitLab Issue lifecycle workflow — automates start/progress/done stages with label transitions and milestone tracking. Trigger on 작업 시작, 이슈 등록, 구현 진행, 작업 진행, 구현 완료, 작업 완료, issue workflow, work start, work progress, work done.
+model: haiku
 user-invocable: true
 ---
 
@@ -18,6 +19,19 @@ GitLab 이슈의 작업 수명주기를 3단계(시작→진행→완료)로 관
 >
 > `:fullpath` 플레이스홀더는 현재 저장소 컨텍스트에서 자동 해석된다.
 > 아래 예제에는 간결성을 위해 sed가 생략되어 있으나, **조회 시 반드시 적용한다.**
+>
+> **사전 점검 — remote/호스트 매칭:** `git remote -v` 호스트와 `glab auth status` 호스트 문자열이 포트까지 정확히 일치해야 한다. 불일치 시 `:fullpath` 해석 실패 → 모든 명령에 `-R <host:port>/<group>/<repo>` 플래그 필수. 근본 해결은 `/glab-cli`의 "포트 불일치" 섹션 참조.
+>
+> **이슈 조회는 댓글까지 필수:** `glab issue view <id>` 만으로는 notes(댓글)가 누락된다. 반드시 `--comments` 플래그를 붙이거나 notes API를 병행 호출하여 전체 맥락을 확보한다.
+>
+> ```bash
+> # 이슈 본문 + 댓글 한 번에
+> glab issue view <id> --comments 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+>
+> # 또는 notes API 직접 조회 (페이지네이션 포함)
+> glab api projects/:fullpath/issues/<id>/notes --paginate \
+>   2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+> ```
 
 ---
 
@@ -89,28 +103,20 @@ GitLab 이슈의 작업 수명주기를 3단계(시작→진행→완료)로 관
 
 ### 절차
 
-1. **현재 이슈 확인** — 이전 단계에서 사용한 이슈 또는 사용자가 지정한 이슈를 확인한다.
+1. **현재 이슈 확인** — 이전 단계에서 사용한 이슈 또는 사용자가 지정한 이슈를 본문 + 댓글까지 확인한다.
 
    ```bash
-   glab issue view <id>
+   glab issue view <id> --comments
    ```
 
-2. **현재 사용자 ID 확인** — assignee 등록을 위해 사용자 ID를 조회한다.
-
-   ```bash
-   glab api user
-   ```
-
-   > 응답 JSON에서 `id` 필드를 추출한다.
-
-3. **[확인] 이슈 업데이트 내용 제안** — 다음 변경 사항을 사용자에게 보여준 후 확인한다:
+2. **[확인] 이슈 업데이트 내용 제안** — 다음 변경 사항을 사용자에게 보여준 후 확인한다:
    - "이슈 #N에 다음 변경을 적용합니다:"
    - "1. 본문에 작업내용 추가"
-   - "2. assignee를 본인으로 설정"
+   - "2. assignee를 @manuel71(으)로 설정"
    - "3. 라벨을 상태::진행중으로 변경"
    - 사용자가 거부하면 수정 요청을 반영한다.
 
-4. **이슈 본문 업데이트** — 기존 description을 조회한 후 작업내용을 추가한다.
+3. **이슈 본문 업데이트** — 기존 description을 조회한 후 작업내용을 추가한다.
    - 현재 description을 GET으로 조회한다.
    - Write 도구로 `.gl-body.md`에 업데이트된 전체 description을 작성한다.
 
@@ -120,14 +126,13 @@ GitLab 이슈의 작업 수명주기를 3단계(시작→진행→완료)로 관
    rm .gl-body.md
    ```
 
-5. **assignee 등록**
+4. **assignee 등록** — 기본 담당자는 `@manuel71`. 다른 사용자 지정 시 override.
 
    ```bash
-   glab api projects/:fullpath/issues/<id> -X PUT \
-     -F "assignee_ids[]=<user_id>"
+   glab issue update <id> --assignee @manuel71
    ```
 
-6. **라벨 변경** — `add_labels`/`remove_labels`로 안전하게 전환한다.
+5. **라벨 변경** — `add_labels`/`remove_labels`로 안전하게 전환한다.
 
    ```bash
    glab api projects/:fullpath/issues/<id> -X PUT \
@@ -147,10 +152,10 @@ GitLab 이슈의 작업 수명주기를 3단계(시작→진행→완료)로 관
 
 ### 절차
 
-1. **현재 이슈 확인**
+1. **현재 이슈 확인** — 본문 + 댓글까지 포함해 최신 상태를 파악한다.
 
    ```bash
-   glab issue view <id>
+   glab issue view <id> --comments
    ```
 
 2. **완료보고 작성** — 변경사항 요약, 테스트 결과 등을 포함하여 Write 도구로 `.gl-body.md`를 작성한다.

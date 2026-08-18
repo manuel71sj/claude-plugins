@@ -1,6 +1,7 @@
 ---
 name: ci
 description: GitLab CI/CD pipeline management guide using glab CLI. Use for viewing pipelines, tracing jobs, managing schedules, and downloading artifacts. Trigger on glab ci, pipeline, CI/CD, glab ci view, glab ci status, glab ci lint, glab job, glab schedule, glab runner.
+model: haiku
 user-invocable: true
 ---
 

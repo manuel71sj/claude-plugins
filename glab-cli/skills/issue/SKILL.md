@@ -1,6 +1,7 @@
 ---
 name: issue
 description: GitLab Issue and Incident management guide using glab CLI. Use for creating, tracking, and managing issues and incidents from the terminal. Trigger on glab issue, glab incident, issue create, issue list, issue close, issue tracking.
+model: haiku
 user-invocable: true
 ---
 
@@ -122,7 +123,8 @@ glab issue list --assignee=@me       # 내게 할당된 이슈
 glab issue list -l bug               # 라벨 필터
 glab issue list --milestone "v1.0"   # 마일스톤 필터
 glab issue list --search "keyword"   # 키워드 검색
-glab issue view <id>                 # 상세 보기
+glab issue view <id> --comments      # 상세 보기 (댓글 포함, 기본 권장)
+glab issue view <id>                 # 상세 보기 (본문만, 댓글 누락)
 glab issue view <id> --web           # 브라우저에서 열기
 ```
 

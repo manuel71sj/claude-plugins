@@ -1,6 +1,7 @@
 ---
 name: glab-cli
 description: GitLab CLI (glab) usage guide for GitLab Self-Managed environments. Use this skill for glab setup, authentication, configuration, releases, repository operations, variables, API access, aliases, and troubleshooting. Trigger on glab, gitlab cli, glab auth, glab config, glab release, glab repo, glab variable, glab api, glab alias, glab setup, glab install, glab certificate, x509 error.
+model: haiku
 user-invocable: true
 ---
 
@@ -147,6 +148,45 @@ PAT 생성: `https://<host>/-/user_settings/personal_access_tokens?scopes=api,wr
 ```bash
 glab auth status
 ```
+
+#### 포트 불일치 (SSH remote vs HTTP API 포트)
+
+SSH remote 호스트명과 glab에 등록된 호스트명(API 포트 포함)이 다르면 base repository 매칭 실패:
+
+```
+Could not determine base repository: none of the git remotes configured
+for this repository correspond to the GITLAB_HOST environment variable.
+```
+
+glab은 remote 호스트 문자열과 config 호스트 문자열의 **정확 일치**를 요구한다. SSH remote는 `git.example.com`, HTTP API는 `git.example.com:90`처럼 포트만 다른 경우에도 불일치로 판정한다.
+
+**해결 A — `api_host` 분리 (권장):**
+
+```bash
+# GITLAB_HOST는 remote와 동일하게 (포트 없음)
+unset GITLAB_HOST
+
+# auth login 시 --api-host로 API 포트 분리
+glab auth login --hostname git.example.com --api-host git.example.com:90
+
+# 또는 기존 config 교정
+glab config set api_host git.example.com:90 --host git.example.com
+glab config set api_protocol http --host git.example.com
+```
+
+**해결 B — 일회성 회피:**
+
+```bash
+glab <cmd> -R git.example.com:90/<group>/<repo>
+```
+
+**해결 C — 매칭 remote 추가:**
+
+```bash
+git remote add glab-http http://git.example.com:90/<group>/<repo>.git
+```
+
+> **이 프로젝트 예시:** `-R git.legaltech.co.kr:90/dev1/hippo/hippo-monorepo`
 
 ### 3. 자체 서명 인증서 처리
 
